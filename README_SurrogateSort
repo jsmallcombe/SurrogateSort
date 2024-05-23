@@ -1,0 +1,37 @@
+   SurrogateSort PARSER VERSION 1.0
+
+   Usage dependent on root classes (and subclasses)
+   Tested using ROOT 6.28/06 
+
+   All commands can be given either on the command line or by passing a command list file.
+   Command list file is any plain text file named *.info
+   The # mark at the start of a line comments out the line in an info file
+   Command line inputs and info files can be combined.
+   Info file can be nested 
+   
+   Usage: ./bin/SurrogateSort run.info
+   Usage: ./bin/SurrogateSort files.info analysis37434.root gates.info
+
+
+   Inputs :
+	Input Data file -
+		Inputs can be specified as a list exactly, with a wildcard, or with a wildcard and a list of run numbers (pattern substitution)
+		To specifiy an input with wildcards double asterix (**) must be used :
+      e.g. path/analysis**.root
+		Combine with run numbers to get only specific runs but without having to specify the entire file name each time
+      e.g. path/analysis**.root 455 456 457
+		Any exactly specified .root which exists will be assumed to be an input (unless -o is used) hence, 
+		you can make use of pattern subsitution on the command line to go beyond the limits of the program input processing.  
+      e.g. ./bin/SurrogateSort $(echo analysis/analysis37434_*.root)
+   
+	Output file -
+		The output filename can be specified exactly OR with a wildcade (single asterix *) IF run numbers are specified
+		e.g. NewOutput.root
+		e.g. OutputRuns*.root /Data/Runs**.root 455 456 457
+		
+		If the file exists, you must use the -o command before it to overwrite, otherwise it will be assumed to be an input
+
+	Calibration file -
+		Any *.cal file
+		e.g. Calibration.cal
+
