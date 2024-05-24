@@ -11,11 +11,13 @@ CC = g++
 CFLAGS = -std=c++11 -g -fPIC $(ROOT_GCC_FLAGS) $(GRSI_GCC_FLAGS) -I$(INCLUDE) 
 LIBRS = -L$(INCLUDE) $(EXTERNAL_LIBS) $(ROOT_LIBS) $(ROOT_LIBSEXTRA) -L$(LIB) -L$(LIB)/bin
 
+
+NONHEAD = $(wildcard src/*.h)
 SYSHEAD = $(wildcard include/*.h)
 OBJECTS = $(patsubst include/%.h,bin/%.o,$(SYSHEAD))
 HEAD = $(patsubst %.h,$(shell pwd)/%.h,$(SYSHEAD))
 
-bin/SurrogateSort: Sort.cpp $(OBJECTS) bin/DictOutput.cxx
+bin/SurrogateSort: Sort.cpp $(OBJECTS) $(NONHEAD) bin/DictOutput.cxx
 	$(CC) $(CFLAGS) -o $@ $< bin/DictOutput.cxx -I. $(OBJECTS) $(LIBRS)
 	chmod +x $@
 

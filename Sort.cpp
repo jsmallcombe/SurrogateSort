@@ -76,16 +76,33 @@ int main(int argc, char *argv[]){
   tree->SetBranchAddress("Adc", &tAdc);
   long nentries = DataChain->GetEntries();
 
+	Short_t FileI=0;
+    Short_t FileN=Inputs.Entries.size();
+	long NextRun=0;
+	if(FileN)NextRun=Inputs.Entries[0];
+	
 #include "src/histogramlist.h"
 
 	vector<DetHit> HPGe,SiERaw,SidERaw,Solar,LaBr;
 	vector<TelescopeHit> SiHits;
+	vector<bool> IDGateTest(Inputs.ParticleIDgates.size(),false);
 	
+	bool EndOfRun=false;
+	cout<<endl;
+		
 	// Main Loop 
-
-		cout<<endl;
+	
     for(long jentry=0;jentry<nentries;jentry++){
         DataChain->GetEntry(jentry);
+		
+		EndOfRun=false;
+		if(jentry+1==NextRun){
+			if(FileI+1<FileN){
+				FileI++;
+				NextRun=Inputs.Entries[FileI];
+			}
+			EndOfRun=true;//Indicates the final even of a runfile			
+		}
 		
 		// Clear loop vectors
 		HPGe.clear(); 
@@ -145,6 +162,7 @@ int main(int argc, char *argv[]){
 
 	gROOT->cd();
 
+	
 	out.Write();
 	out.Close();
 

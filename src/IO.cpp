@@ -179,12 +179,7 @@ void SurrogateSortIO::ProcessInputs(){
         }else if(str[0]=='-'){
             // A special argument, read the next item out of order of normal processing loop
             
-            if(str.find("-o")<str.size()||str.find("-O")<str.size()){// Overwrite existing output dile
-                *this>>str;
-                if(str.find(".root")==str.size()-5&&str.size()>6){ // If a root file name
-                    OutFilename=str;
-                }
-            }
+            ProcessOption(str);
             
         }else{
             int run;
@@ -251,8 +246,14 @@ void SurrogateSortIO::ProcessInputs(){
 
                 const char* entry;
 
+                std::vector<TString> DirectoryItems;
                 while ((entry = gSystem->GetDirEntry(dir))) {
-                    TString fileName = entry;
+                    DirectoryItems.emplace_back(entry);
+                }
+                std::sort(DirectoryItems.begin(), DirectoryItems.end());
+                    
+                for(auto fileName : DirectoryItems){
+                    
                     if (fileName.BeginsWith(prefix.c_str()) && fileName.EndsWith(suffix.c_str())) {
                         TString fullPath = TString(path) + "/" + fileName;
                         TFile* file = TFile::Open(fullPath);
@@ -272,6 +273,71 @@ void SurrogateSortIO::ProcessInputs(){
         }
     }
 }
+
+TString StripFileName(TString str){
+        TString fileName(str);
+
+        fileName.Remove(fileName.Length() - 5, 5);
+
+        // Find the last occurrence of the path separator
+        if (fileName.Contains('/')) {
+            fileName.Remove(0, fileName.Last('/') + 1);
+        }
+
+        return fileName;
+}
+ 
+void SurrogateSortIO::ProcessOption(TString str){
+        // A special argument, read the next item out of order of normal processing loop
+
+// Contains 
+        if(str.EqualTo("-o")||str.EqualTo("-O")){// Overwrite an existing output file, next argument is file name
+            *this>>str;
+            if(str.EndsWith(".root")){ // If a root file name
+                OutFilename=str;
+            }
+        }
+        
+        if(str.EqualTo("-ID")){// Load a particle ID gate, next argument file containing name
+            *this>>str;
+            if(str.EndsWith(".root")){ // If a root file name
+                
+                    
+                TFile *file = TFile::Open(str, "READ");
+                if (!file || file->IsZombie()) {
+                    std::cerr<< std::endl << "Error: Could not open file " << str <<std::flush;
+                    return;
+                }
+                
+                TString fileName=StripFileName(str);
+
+                // Iterate over the keys in the file
+                TIter nextKey(file->GetListOfKeys());
+                TKey *key;
+                while ((key = (TKey*)nextKey())) {
+                    // Check if the class name matches "TCutG"
+                    if (std::string(key->GetClassName()) == "TCutG") {
+                        TCutG *cutG = (TCutG*)key->ReadObj();
+                        if (cutG) {
+                            gROOT->cd();
+                            ParticleIDgates.push_back((TCutG*)cutG->Clone(fileName));
+                            std::cout<< std::endl << "Found a TCutG object: " << cutG->GetName() << std::flush;
+                        }
+                        break; // Exit the loop after finding the first TCutG
+                    }
+                }
+
+                // Close the file
+                file->Close();
+                delete file;
+                
+            }
+                   
+        }
+    
+}
+    
+    
 
 void SurrogateSortIO::Rewind(){
 	infostream.str("");

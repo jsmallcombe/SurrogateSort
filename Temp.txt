@@ -1,5 +1,0 @@
-321
-SiliconSort*.root
-#/home/js/AnalysisAndOngoing/SurrogateExperiment/SurrogateSort/SiliconSort*.root
-/Data/SurrogateExptDataMay2024/Tout01/Am243_**.root
-InitialCalFile.cal

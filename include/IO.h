@@ -13,6 +13,8 @@
 #include <TChain.h>
 #include <TSystem.h>
 #include <TString.h>
+#include <TKey.h>
+#include <TCutG.h>
 #include <filesystem>
 
 using namespace std;
@@ -30,13 +32,16 @@ class SurrogateSortIO{
     vector<TString> InputFiles;
     TString OutFilename;
     vector<long> Entries;
+    vector<TCutG*> ParticleIDgates;
 
 	stringstream infostream;
 	void Rewind();
 	
 	SurrogateSortIO(){};
 	SurrogateSortIO(int argc, char *argv[]);	
-	virtual ~SurrogateSortIO(){};
+	virtual ~SurrogateSortIO(){
+		for(auto g : ParticleIDgates)delete g;
+	};
 	
 	SurrogateSortIO( const SurrogateSortIO &obj){	store=obj.store;Rewind();}//copy constructor
 	SurrogateSortIO& operator=(const SurrogateSortIO& obj){//assignment operator
@@ -46,6 +51,7 @@ class SurrogateSortIO{
 	
 	void ReadInfoFile(string filename);
 	void ProcessInputs();
+	void ProcessOption(TString str);
 
 	string ReturnFind(string compare);
 	bool IsPresent(string compare);
@@ -85,4 +91,6 @@ void ReadCal(string filename="cal.txt");
 
 bool stringToInt(const std::string& str, int& result);
 
+TString StripFileName(TString str);
+	
 #endif

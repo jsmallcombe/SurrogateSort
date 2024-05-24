@@ -114,6 +114,8 @@ class TelescopeHit{
     DetHit& dE(){return fdEHit;}
     DetHit& E(){return fEHit;}
     
+    Double_t Time(){return fdEHit.Time();}
+    
     UShort_t AB(){return ab;};
     
     static int AB(const DetHit& hit);

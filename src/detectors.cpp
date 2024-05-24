@@ -101,7 +101,7 @@ double TelescopeHit::OffsetXZ = TelescopeHit::OffsetY - TelescopeHit::FaceOrigin
 // The default assumption is the XZ strip 0 is nearest the beam axis and Y strip 0 is nearest floor
 bool TelescopeHit::Invert_dEA = false;
 bool TelescopeHit::Invert_EA = false;
-bool TelescopeHit::Invert_dEB = true;
+bool TelescopeHit::Invert_dEB = false;
 bool TelescopeHit::Invert_EB = false;
 
 

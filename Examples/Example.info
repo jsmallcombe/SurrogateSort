@@ -1,4 +1,5 @@
-321
--o SiliconSort_C.root
 /Data/SurrogateExptDataMay2024/Tout01/Am243_**.root
+320 321 322
+-o SiliconSortNew.root
 InitialCalFile.cal
+-ID gates/Alpha.root
