@@ -1,7 +1,7 @@
     
     // Itterate through raw silicon hits, build telescope events and fill raw channel related histograms
-    for(auto dE : SidERaw){
-        for(auto E : SiERaw){
+    for(auto& dE : SidERaw){
+        for(auto& E : SiERaw){
             
             if(TelescopeHit::AB(dE)!=TelescopeHit::AB(E))continue;// Check same detector
 
@@ -18,7 +18,7 @@
         
 
     // Itterate through constructed good telescope hits
-    for(auto Si : SiHits){
+    for(auto& Si : SiHits){
         
         TVector3 World=Si.GetPos(true);
         
@@ -60,8 +60,8 @@
         
         // Silicon + Particle loops
         
-        for(auto gHit : HPGe){
-            SiGammaT[Si.AB()]->Fill(gHit.Index(),Si.Time()-gHit.Time());
+        for(auto& gHit : HPGe){
+            SiHPGeT[Si.AB()]->Fill(gHit.Index(),Si.Time()-gHit.Time());
             
             for(unsigned int g=0;g<IDGateTest.size();g++){
                 if(IDGateTest[g]){
@@ -73,10 +73,10 @@
             }
             
         }
-        for(auto sHit : Solar){
+        for(auto& sHit : Solar){
             SiSolarT->Fill(sHit.Index(),Si.Time()-sHit.Time());
         }
-        for(auto lHit : LaBr){
+        for(auto& lHit : LaBr){
             SiLaBrT->Fill(lHit.Index(),Si.Time()-lHit.Time());
             
             for(unsigned int g=0;g<IDGateTest.size();g++){
@@ -84,6 +84,33 @@
                     GateLaBr[g]->Fill(lHit.Energy());
                 }
             }
+        }
+    }
+
+    // Loops of gammas, ignoring silicon events
+    
+    
+    // Symetrised by total loop twice rather than a j>i inner loop, slower but neat
+    for(auto& gHit : HPGe){
+        for(auto& GHit : HPGe){//Need t
+            if (&gHit == &GHit)continue; //skip self comparison
+                
+            HPGeHPGe->Fill(gHit.Energy(),GHit.Energy());
+            HPGeGammaT->Fill(gHit.Index(),gHit.Time()-GHit.Time());
+        }
+        
+        for(auto& lHit : LaBr){
+            HPGeGammaT->Fill(gHit.Index(),gHit.Time()-lHit.Time());
+            LaBrGammaT->Fill(lHit.Index(),lHit.Time()-gHit.Time());
+            HPGeLaBr->Fill(gHit.Energy(),lHit.Energy());
+        }
+    }
+    
+    for(auto& lHit : LaBr){
+        for(auto& LHit : LaBr){
+            if (&lHit == &LHit)continue; //skip self comparison
+            
+            LaBrGammaT->Fill(lHit.Index(),lHit.Time()-LHit.Time());
         }
     }
 

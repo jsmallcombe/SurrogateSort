@@ -15,15 +15,22 @@
             new TH2D("EvdEdT_A","EvdE#DeltaT_A;E Channel Index;dE-E #DeltaT",16,0,16,300,-3E3,3E3),
             new TH2D("EvdEdT_B","EvdE#DeltaT_B;E Channel Index;dE-E #DeltaT",16,0,16,300,-3E3,3E3)
         };
-        TH2D* SiGammaT[2]={
-            new TH2D("SiGammaT_A","SiGamma#DeltaT_A;Gamma Index;dE-Gamma #DeltaT",3,0,3,300,-3E3,3E3),
-            new TH2D("SiGammaT_B","SiGamma#DeltaT_B;Gamma Index;dE-Gamma #DeltaT",3,0,3,300,-3E3,3E3)
+        TH2D* SiHPGeT[2]={
+            new TH2D("SiHPGeT_A","SiHPGe#DeltaT_A;HPGe Index;dE-HPGe #DeltaT",3,0,3,300,-3E3,3E3),
+            new TH2D("SiHPGeT_B","SiHPGe#DeltaT_B;HPGe Index;dE-HPGe #DeltaT",3,0,3,300,-3E3,3E3)
         };
         
         TH2D* SiSolarT = new TH2D("SiSolarT","SiSolar#DeltaT;Solar Index;dE-Solar #DeltaT",32,0,32,300,-3E3,3E3);
         TH2D* SiLaBrT = new TH2D("SiLaBrT","SiLaBr#DeltaT;LaBr Index;dE-LaBr #DeltaT",4,0,4,300,-3E3,3E3);
         
+        TH2D* LaBrGammaT = new TH2D("LaBrGammaT","LaBrAll#gamma#DeltaT;LaBr Index;LaBr-#gamma #DeltaT",4,0,4,300,-3E3,3E3);
+        TH2D* HPGeGammaT = new TH2D("HPGeGammaT","HPGeAll#gamma#DeltaT;HPGe Index;HPGe-#gamma #DeltaT",4,0,4,300,-3E3,3E3);
+        
    out.cd();
+   
+    TH2D* HPGeHPGe = new TH2D("HPGeHPGe","HPGeHPGe;HPGe E_{#gamma};HPGe E_{#gamma}",1000,0,8000,1000,0,8000);
+    TH2D* HPGeLaBr = new TH2D("HPGeLaBr","HPGeLaBr;HPGe E_{#gamma};LaBr E_{#gamma}",1000,0,8000,1000,0,8000);
+   
 
     TH2D* dEE[2]={
         new TH2D("dEEA","dEEA;E;dE",1000,0,8000,500,0,4000),
