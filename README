@@ -36,5 +36,8 @@
 		e.g. Calibration.cal
 
    Extra Options
-      -ID specifies the next argument will be a root file containing a TCutG for ID gating
-      e.g. -ID /gates/AlphaGate.root
+      -ID specifies the next argument will be a root file containing a TCutG for ID gating, followed by an integer to be saved in parrallel to denote a type of index etc.
+      e.g. -ID /gates/AlphaGate.root 3
+
+      Any other command preceded by "-" will be taken as a generic named numeric input e.g.
+      -Offset 2.43

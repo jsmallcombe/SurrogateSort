@@ -71,11 +71,21 @@
        new TH2D("dECalA","dECalA Single E strip conicince;Index;dE",16,0,16,500,0,4000),
        new TH2D("dECalB","dECalB Single E strip conicince;Index;dE",16,0,16,500,0,4000)
     };
+   TH2D* dEdXCal[2]={
+       new TH2D("dEdXCalA","dEdXCalA Single E strip conicince;Index;dEdX",16,0,16,500,0,4000),
+       new TH2D("dEdXCalB","dEdXCalB Single E strip conicince;Index;dEdX",16,0,16,500,0,4000)
+    };
    TH2D* ECal[2]={
        new TH2D("ECalA","ECalA Single dE strip conicince;Index;E",16,0,16,100,0,8000),
        new TH2D("ECalB","ECalB Single dE strip conicince;Index;E",16,0,16,100,0,8000)
     };
    out.cd();
+   int CalGateI=0;
+   
+    for(unsigned int g=0;g<Inputs.CutGates.size();g++){
+        TString gatename=Inputs.CutGates[g]->GetName();
+        if(gatename.Contains("eam"))CalGateI=g;
+    }
    
    
 
@@ -102,7 +112,7 @@
     
     vector<TH1D*> GateGamma,GateLaBr;
     vector<TH2F*> GatedSiliconTheta;
-    for(auto gate : Inputs.ParticleIDgates){
+    for(auto gate : Inputs.CutGates){
         TString gatename=gate->GetName();
         GateGamma.push_back(new TH1D(gatename+"GatedGamma",gatename+";E gamma",2000,0,8000));
         GateLaBr.push_back(new TH1D(gatename+"GatedLaBr",gatename+";E LaBr",2000,0,8000));

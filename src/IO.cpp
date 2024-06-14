@@ -296,9 +296,7 @@ void SurrogateSortIO::ProcessOption(TString str){
             if(str.EndsWith(".root")){ // If a root file name
                 OutFilename=str;
             }
-        }
-        
-        if(str.EqualTo("-ID")){// Load a particle ID gate, next argument file containing name
+        }else if(str.EqualTo("-ID")){// Load a particle ID gate, next argument file containing name
             *this>>str;
             if(str.EndsWith(".root")){ // If a root file name
                 
@@ -320,7 +318,7 @@ void SurrogateSortIO::ProcessOption(TString str){
                         TCutG *cutG = (TCutG*)key->ReadObj();
                         if (cutG) {
                             gROOT->cd();
-                            ParticleIDgates.push_back((TCutG*)cutG->Clone(fileName));
+                            CutGates.push_back((TCutG*)cutG->Clone(fileName));
                             std::cout<< std::endl << "Found a TCutG object: " << cutG->GetName() << std::flush;
                         }
                         break; // Exit the loop after finding the first TCutG
@@ -331,10 +329,21 @@ void SurrogateSortIO::ProcessOption(TString str){
                 file->Close();
                 delete file;
                 
+                UShort_t GateTypeID;
+                *this>>GateTypeID;
+                GateID.push_back(GateTypeID);
             }
                    
+        }else{
+            str.Remove(TString::kLeading,'-');
+            double inputdata;
+            *this>>inputdata;
+            
+            NumericInputNames.push_back(str);
+            NumericInputs.push_back(inputdata);
+        
+            std::cout<< std::endl << str<<" : " << inputdata << std::flush;
         }
-    
 }
     
     
@@ -411,4 +420,15 @@ TChain* SurrogateSortIO::DataTree(TString TreeName){
 }
 
 
-
+bool SurrogateSortIO::TestInput(TString InputName){
+    for(auto& s : NumericInputNames){
+        if(s==InputName)return true;
+    }
+    return false;
+}
+double SurrogateSortIO::GetInput(TString InputName){
+    for(unsigned int i=0;i<NumericInputNames.size();i++){
+        if(NumericInputNames[i]==InputName)return NumericInputs[i];
+    }
+    return 0;
+}

@@ -9,6 +9,9 @@
  #include <TH1.h>
  #include <TH2.h>
  #include <TH3.h>
+ #include <TProfile.h>
+ #include <TGraphErrors.h>
+ #include <TF1.h>
  #include <TMath.h>
  #include <TVector3.h>
  #include <TTree.h>
@@ -25,6 +28,9 @@
  #include <detectors.h>
  #include <IO.h>
 
+#if defined(CALIBRATE)
+	#include "jphysmaster.h"
+#endif
 
 using namespace std;
 
@@ -44,7 +50,6 @@ double PhiOffset(double Phi){
 
 int main(int argc, char *argv[]){
 	SurrogateSortIO Inputs(argc, argv);
-
 	
     int totalchans=0;
     for(int i=0;i<5;i++){
@@ -81,19 +86,28 @@ int main(int argc, char *argv[]){
 	long NextRun=0;
 	if(FileN)NextRun=Inputs.Entries[0];
 	
-#include "src/histogramlist.h"
+    #if defined(DEBUG)
+		#include "src/DebugHistList.h"
+    #elif defined(CALIBRATE)
+		#include "src/CalHistList.h"
+    #else
+        #include "src/SortHistogramList.h"
+    #endif
 
 	vector<DetHit> HPGe,SiERaw,SidERaw,Solar,LaBr;
 	vector<TelescopeHit> SiHits;
-	vector<bool> IDGateTest(Inputs.ParticleIDgates.size(),false);
+	vector<bool> IDGateTest(Inputs.CutGates.size(),false);
 	
 	bool EndOfRun=false;
 	cout<<endl;
 		
 	// Main Loop 
-	
+	 
     for(long jentry=0;jentry<nentries;jentry++){
         DataChain->GetEntry(jentry);
+		
+// // 		//Quick hard coded test
+// // 		if(!(((( tMod->at(0) )==2)||(( tMod->at(0) )==3)) && (tCh->at(0))<16 ))continue;
 		
 		EndOfRun=false;
 		if(jentry+1==NextRun){
@@ -121,6 +135,7 @@ int main(int argc, char *argv[]){
 //             int Chan_i=(*tCh)[i];
 //             double Time_i=(*tTs)[i];
 //             double dE=(*tAdc)[i];
+			
 
             ChanE->Fill(ModChanList[hit.Mod()]+hit.Chan(),hit.Charge());
 			
@@ -151,9 +166,16 @@ int main(int argc, char *argv[]){
 					break;
 			}
 		}
+		
 			
-			
-		#include "src/MainSortLoop.h"
+		#if defined(DEBUG)
+			#include "src/DebugLoop.h"
+		#elif defined(CALIBRATE)
+			#include "src/CalLoop.h"
+		#else
+			#include "src/MainSortLoop.h"
+		#endif
+		
 
 		if(jentry%10000==0){
 		cout<<setiosflags(ios::fixed)<<std::setprecision(2)<<100.*(double)jentry/nentries<<" % complete"<<"\r"<<flush;

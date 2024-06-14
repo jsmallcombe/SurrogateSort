@@ -17,7 +17,30 @@ SYSHEAD = $(wildcard include/*.h)
 OBJECTS = $(patsubst include/%.h,bin/%.o,$(SYSHEAD))
 HEAD = $(patsubst %.h,$(shell pwd)/%.h,$(SYSHEAD))
 
-bin/SurrogateSort: Sort.cpp $(OBJECTS) $(NONHEAD) bin/DictOutput.cxx
+SHAREDLIB = bin/SS.so
+TARG = bin/SurrogateSort
+
+$(TARG): Sort.cpp $(SHAREDLIB)
+	$(CC) $(CFLAGS) -o $@ $< bin/DictOutput.cxx -I. $(OBJECTS) $(LIBRS)
+	chmod +x $@
+
+debug:  Sort.cpp $(SHAREDLIB)
+	$(CC) -DDEBUG $(CFLAGS) -o  $(TARG) $< bin/DictOutput.cxx -I. $(OBJECTS) $(LIBRS)
+	chmod +x $(TARG)
+	touch Sort.cpp
+	
+cal:  Sort.cpp $(SHAREDLIB)
+	$(CC) -DCALIBRATE $(CFLAGS) -o  $(TARG) $< bin/DictOutput.cxx -I. $(OBJECTS) $(LIBRS) -ljroot_phys
+	chmod +x $(TARG)
+	touch Sort.cpp
+
+$(SHAREDLIB): $(OBJECTS) $(NONHEAD) bin/DictOutput.cxx
+	$(CC) $(CFLAGS) -o $@ -shared bin/DictOutput.cxx $(OBJECTS) -I. $(ROOT_LIBS) $(ROOT_LIBSEXTRA)
+	bash bin/MakeExport.sh
+	
+QuickCal : bin/SurrogateCal	
+	
+bin/SurrogateCal: scripts/QuickCal.cpp $(OBJECTS) $(NONHEAD) bin/DictOutput.cxx
 	$(CC) $(CFLAGS) -o $@ $< bin/DictOutput.cxx -I. $(OBJECTS) $(LIBRS)
 	chmod +x $@
 
@@ -32,4 +55,4 @@ clean:
 	rm -f $(LIB)/bin/*.o
 	rm -f $(LIB)/bin/Linkdef.h
 	rm -f $(LIB)/bin/DictOutput*
-	rm -f $(LIB)/bin/SurrogateSort
+	rm -f $(LIB)/bin/Surrogate*

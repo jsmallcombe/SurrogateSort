@@ -39,6 +39,7 @@ class DetHit{
     
     static void SetCalibrationParam(UShort_t Mod,UShort_t Chan,double Pol0=0, double Pol1=1,double Pol2=0);
     static array<double,3> GetCal(UShort_t Mod,UShort_t Chan);
+    static void SetCalibrationDirect(UShort_t DetT,UShort_t Index,double Pol0=0, double Pol1=1,double Pol2=0);
     
     static UShort_t GetDetType(UShort_t Mod,UShort_t Chan);
     static UShort_t GetIndex(UShort_t Mod,UShort_t Chan);

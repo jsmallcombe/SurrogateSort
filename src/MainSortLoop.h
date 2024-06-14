@@ -10,7 +10,7 @@
             dEEtime[TelescopeHit::AB(dE)]->Fill(dE.Index(),dT);
             EdEtime[TelescopeHit::AB(dE)]->Fill(E.Index(),dT);
             
-            if(abs(dT)<60){//If dE inside true coiccidence timegate
+            if(abs(dT)<100){//If dE inside true coiccidence timegate (relaxed from 60)
                 SiHits.push_back(TelescopeHit(dE,E));
             }
         }
@@ -43,21 +43,14 @@
         RunFile_E[Si.AB()][Si.E().Index()]->Fill(FileI,E);
         
         // Itterate through the loaded TCutG and setting the IDGateTest vector if the current event is inside that event
-        for(unsigned int g=0;g<Inputs.ParticleIDgates.size();g++){
-            IDGateTest[g]=Inputs.ParticleIDgates[g]->IsInside(Etot,dEdX);
+        for(unsigned int g=0;g<Inputs.CutGates.size();g++){
+            IDGateTest[g]=Inputs.CutGates[g]->IsInside(Etot,dEdX);
             if(IDGateTest[g]){
                     GatedSiliconTheta[g]->Fill(Etot,World.Theta()/TMath::DegToRad());
             }
         }
         
-        // Plot silicon strips vs selected oposing strip to ensure fixed angle/energy
-        if(Si.dE().Index()==14){
-            ECal[Si.AB()]->Fill(Si.E().Index(),E);
-        }
-        if(Si.E().Index()==6||Si.E().Index()==9){
-            dECal[Si.AB()]->Fill(Si.dE().Index(),dE);
-        }
-        
+
         // Silicon + Particle loops
         
         for(auto& gHit : HPGe){
@@ -69,6 +62,18 @@
                     GamE=gHit.Energy();
                     Gami=gHit.Index();
                     gammatree.Fill();
+                    
+                    
+                    if(g==CalGateI){//
+                        // Plot silicon strips vs selected oposing strip to ensure fixed angle/energy
+                        if(Si.dE().Index()==14){
+                            ECal[Si.AB()]->Fill(Si.E().Index(),E);
+                        }
+                        if(Si.E().Index()==6||Si.E().Index()==9){
+                            dECal[Si.AB()]->Fill(Si.dE().Index(),dE);
+                            dEdXCal[Si.AB()]->Fill(Si.dE().Index(),dE);
+                        }
+                    }
                 }
             }
             

@@ -27,12 +27,17 @@ class SurrogateSortIO{
     
     private:
 	vector<string> store;
+    vector<double> NumericInputs;
+    vector<TString> NumericInputNames;
+	
     public:
         
     vector<TString> InputFiles;
     TString OutFilename;
     vector<long> Entries;
-    vector<TCutG*> ParticleIDgates;
+    vector<TCutG*> CutGates;
+    vector<UShort_t> GateID;
+	
 
 	stringstream infostream;
 	void Rewind();
@@ -40,7 +45,7 @@ class SurrogateSortIO{
 	SurrogateSortIO(){};
 	SurrogateSortIO(int argc, char *argv[]);	
 	virtual ~SurrogateSortIO(){
-		for(auto g : ParticleIDgates)delete g;
+		for(auto g : CutGates)delete g;
 	};
 	
 	SurrogateSortIO( const SurrogateSortIO &obj){	store=obj.store;Rewind();}//copy constructor
@@ -60,7 +65,9 @@ class SurrogateSortIO{
 	void Next(string compare,double &ret){ret=Next(compare);}
 	void NextTwo(string compare,double& ret,double& retB);
     
-    
+    bool TestInput(TString InputName);
+    double GetInput(TString InputName);
+	
     TChain* DataTree(TString TreeName);
 
 };

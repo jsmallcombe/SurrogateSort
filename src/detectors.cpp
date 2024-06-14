@@ -25,6 +25,22 @@ std::array<double, 3> DetHit::GetCal(UShort_t Mod, UShort_t Chan) {
     return {ChanCal[Mod][Chan].p0,ChanCal[Mod][Chan].p1,ChanCal[Mod][Chan].p2};
 }
 
+void DetHit::SetCalibrationDirect(UShort_t DetT,UShort_t Index,double Pol0, double Pol1,double Pol2){
+    
+    for(auto& V : ChanCal){
+        for(auto& CC : V){
+            if(CC.DetectorType==DetT&&CC.Index==Index){
+                CC.p0=Pol0;
+                CC.p1=Pol1;
+                CC.p2=Pol2;
+                return;
+            }
+        }
+    }
+    
+}
+
+
 UShort_t DetHit::GetDetType(UShort_t Mod,UShort_t Chan){
     ExpandCal(Mod,Chan); 
     return ChanCal[Mod][Chan].DetectorType;
@@ -80,12 +96,12 @@ double TelescopeHit::ActiveLength = 49.50;
 int TelescopeHit::segN = 16;
 
 // Distance in the XZ plane between the face of detector and origin
-double TelescopeHit::MagXZnorm_dE = 42.218;
+double TelescopeHit::MagXZnorm_dE = 42.318;
 double TelescopeHit::MagXZnorm_E = 48.368;
 
 // Distance between the origin facing PCB face and center/front of the silicon wafer
-double TelescopeHit::FaceOffset_dE = 1.57 + 0.05;
-double TelescopeHit::FaceOffset_E = 1.57 + 0.5;
+double TelescopeHit::FaceOffset_dE = 2.2 - 0.05;
+double TelescopeHit::FaceOffset_E = 2.2 - 0.5;
 
 // Distance along the detector face between the face center and origin normal vector, along the XZ plane
 // As the face normal vector origin is NOT in the center
