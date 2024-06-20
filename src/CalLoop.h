@@ -43,6 +43,9 @@
         dEEtot[Si.AB()]->Fill(Etot,dE);
         dEEi[Si.AB()][Si.dE().Index()]->Fill(E,dE);
         EdEi[Si.AB()][Si.E().Index()]->Fill(E,dE);
+        
+        dEdXEi[Si.AB()][Si.dE().Index()]->Fill(Etot,dEdX);
+        
         dEEffEtot[Si.AB()]->Fill(Etot,dEdX);
         
         dE_E_Calibrated[Si.AB()]->Fill(Cal_E,Cal_dE);
@@ -106,60 +109,72 @@
         
         dEdX_Etot_SumCalibratedProton[Si.AB()]->Fill(ProtonEnergyMidDeltaActive_Average,ProtondEdX_Average);
         
-        // Itterate through the loaded TCutG and setting the IDGateTest vector if the current event is inside that event
-        for(unsigned int g=0;g<Inputs.CutGates.size();g++){
-            IDGateTest[g]=false;
-            if(Inputs.GateID[g]==0)IDGateTest[g]=Inputs.CutGates[g]->IsInside(E,dE);
-            if(Inputs.GateID[g]==1)IDGateTest[g]=Inputs.CutGates[g]->IsInside(Etot,dEdX);
-            
-            if(IDGateTest[g]){
-                
-                    GatedSilicon_dEE[g][Si.AB()]->Fill(E,dE);
-                
-                    double KE_PostTarget=0;
-                    
-                    if(g==0){// First gate should be elastic on americium
-                        KE_PostTarget=KinematicElastic->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
-                      
-                        ////////
-                    }
-                    
-                    // Second gate should be all He3
-                    if(g==1&&ElasticAlHigh[Si.dE().Index()]>E&&ElasticAlLow[Si.dE().Index()]<E){  
-                        
-                        dEEi_Al[Si.AB()][Si.dE().Index()]->Fill(E,dE);
-                        
-                        KE_PostTarget=KinematicElasticAl->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
-                        
-                    }
-                                        
-                    // If we have determined an absolute incident particle energy  
-                    if(KE_PostTarget>0){
-                        double SiRange=He3Silicon_Range_umMeV->Eval(KE_PostTarget);
-                        double Energy_Active_E=He3Silicon_Energy_MeVum->Eval(SiRange-(dE_Thickness_um+E_Dead_um)/EffThick);
-                        
-//                      double Energy_Active_dE=(KE_PostTarget-Energy_Active_E)*TotalDeadTodERatio;
-                        
-                        double Energy_Active_dE=He3Silicon_Energy_MeVum->Eval(SiRange-(dE_FrontDead_um/EffThick))-He3Silicon_Energy_MeVum->Eval(SiRange-(dE_Thickness_um-dE_BackDead_um)/EffThick);
 
-                        CalElast_E[Si.AB()][Si.E().Index()]->Fill(E,Energy_Active_E);
-                        CalElast_dE[Si.AB()][Si.dE().Index()]->Fill(dE,Energy_Active_dE);
-                    }
-                    
-                    if(g==1){// Second gate should be all He3
-                        InvCal_dE[Si.AB()][Si.dE().Index()]->Fill(dE,dECalc);
-                        InvCal_dESelf[Si.AB()][Si.dE().Index()]->Fill(Cal_dE,dECalc);
-                        
-                        InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,dECalc);
-                        InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,Cal_dE);
-                    }    
-                    
-                    
-                    if(g==2){// Second gate should be Protons
-                        InvCal_dE_E_Proton[Si.AB()][Si.dE().Index()]->Fill(dE,ProtondECalc);
-                    }
-            }
+
+                
+            //GatedSilicon_dEE[g][Si.AB()]->Fill(E,dE);
+//             ;
+        
+        bool IsBeam=Raw_dE_E_Charge_BeamGate[Si.AB()]->IsInside(Etot,dEdX);
+        
+        double KE_PostTarget=0;
+        
+        if(Raw_dE_E_Charge_ElasticBeamGate[Si.AB()]->IsInside(Etot,dEdX)){
+            // Gate elastic on americium
+            KE_PostTarget=KinematicElastic->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
         }
+        
+        // Gate on all beam and then energy range gate strip by strip to focus on oxygen elastics
+        if(IsBeam&&ElasticAlHigh[Si.dE().Index()]>E&&ElasticAlLow[Si.dE().Index()]<E){  
+            dEEi_Al[Si.AB()][Si.dE().Index()]->Fill(E,dE);
+            KE_PostTarget=KinematicElasticAl->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
+            
+        }
+                                    
+        // If we have determined an absolute incident particle energy  from elastics
+        if(KE_PostTarget>0){
+            double SiRange=He3Silicon_Range_umMeV->Eval(KE_PostTarget);
+            double Energy_Active_E=He3Silicon_Energy_MeVum->Eval(SiRange-(dE_Thickness_um+E_Dead_um)/EffThick);
+            
+//              double Energy_Active_dE=(KE_PostTarget-Energy_Active_E)*TotalDeadTodERatio;
+            
+            double Energy_Active_dE=He3Silicon_Energy_MeVum->Eval(SiRange-(dE_FrontDead_um/EffThick))-He3Silicon_Energy_MeVum->Eval(SiRange-(dE_Thickness_um-dE_BackDead_um)/EffThick);
+
+            CalElast_E[Si.AB()][Si.E().Index()]->Fill(E,Energy_Active_E);
+            CalElast_dE[Si.AB()][Si.dE().Index()]->Fill(dE,Energy_Active_dE);
+        }
+                   
+             
+                   
+                   
+                   
+        if(IsBeam){
+            InvCal_dESelf[Si.AB()][Si.dE().Index()]->Fill(Cal_dE,dECalc);
+            
+            InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,dECalc);
+            InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,Cal_dE);
+        }    
+        
+        if(dEdX_Etot_Charge_ProtonGate[Si.AB()]->IsInside(E,dE)){
+            InvCal_dE_E_Proton[Si.AB()][Si.dE().Index()]->Fill(dE,ProtondECalc);
+        }
+        
+        
+        
+        if(Raw_dE_E_Charge_3HeGate[Si.AB()]->IsInside(Etot,dEdX)){// special gate that gets those which dont see elastic
+            InvCal_dE[Si.AB()][Si.dE().Index()]->Fill(dE,dECalc);
+        }
+        
+        if(Raw_dE_E_Charge_4HeGate[Si.AB()]->IsInside(Etot,dEdX)){// special gate that gets those which dont see elastic
+            
+            PreRange=ASTAR_4He_Silicon_Range_um_MeV->Eval(Cal_E);  
+            CalcEnergyPostDeltaActive=ASTAR_4He_Silicon_Energy_MeV_um->Eval(PreRange+(E_Dead_um+dE_BackDead_um)/EffThick); 
+            CalcEnergyPreDeltaActive=ASTAR_4He_Silicon_Energy_MeV_um->Eval(PreRange+(E_Dead_um+dE_Thickness_um-dE_FrontDead_um)/EffThick);
+            dECalc=CalcEnergyPreDeltaActive-CalcEnergyPostDeltaActive;
+            
+            InvCal_dE4He[Si.AB()][Si.dE().Index()]->Fill(dE,dECalc);
+        }
+        
         
     }
     

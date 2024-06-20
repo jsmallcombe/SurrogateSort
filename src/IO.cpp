@@ -98,8 +98,10 @@ SurrogateSortIO::SurrogateSortIO(int argc, char *argv[]):SurrogateSortIO(){
     // Itterate over command line inputs, skipping argument 0 which is the program
 	for(int i=1;i<argc;i++){
 		string inpstr(argv[i]);
+		TString Tinpstr(argv[i]);
         // If argument is an info file process it as if it was command line input
-		if(inpstr.find(".info")==((int)inpstr.size())-5){
+		if(Tinpstr.EndsWith(".info")){
+            
             ReadInfoFile(inpstr);
 		}else{
 			store.push_back(inpstr);

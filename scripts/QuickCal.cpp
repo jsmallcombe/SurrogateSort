@@ -144,18 +144,37 @@ int main(int argc, char *argv[]){
 			for(int i=0;i<16;i++){
 				for(int j=0;j<2;j++){ // loop A B
 
-					TString HStr;
+						
+						
+						if(j==0&&i<13)continue;
+						if(j==1&&i<12)continue;
+						
+					TString HStr,HHStr,HHHStr;
 
-// 					if(j==0)HStr=Form("SiliconInverseCal/InvCal_dE_A_%d",i);
-// 					if(j==1)HStr=Form("SiliconInverseCal/InvCal_dE_B_%d",i);
-					if(j==0)HStr=Form("SiliconInverseCal/InvCal_dEComb_A_%d",i);
-					if(j==1)HStr=Form("SiliconInverseCal/InvCal_dEComb_B_%d",i);
+					if(j==0)HStr=Form("ForCal/ElasticDataInverse/InvCal_dE_A_%d",i);
+					if(j==1)HStr=Form("ForCal/ElasticDataInverse/InvCal_dE_B_%d",i);
+					
+					if(j==0)HHStr=Form("ForCal/ElasticDataInverse/InvCal4He_dE_A_%d",i);
+					if(j==1)HHStr=Form("ForCal/ElasticDataInverse/InvCal4He_dE_B_%d",i);
+					
+					
+					if(j==0)HHHStr=Form("ForCal/ElasticDataInverse/Cal_dE_E_Proton_A%d",i);
+					if(j==1)HHHStr=Form("ForCal/ElasticDataInverse/Cal_dE_E_Proton_B%d",i);
+					
+// 					if(j==0)HStr=Form("ForCal/ElasticDataInverse/InvCal_dEComb_A_%d",i);
+// 					if(j==1)HStr=Form("ForCal/ElasticDataInverse/InvCal_dEComb_B_%d",i);
 					
 					TH2* Hist=(TH2*)data.Get(HStr);
-					if(!Hist){
+					TH2* HistB=(TH2*)data.Get(HHStr);
+					TH2* HistC=(TH2*)data.Get(HHHStr);
+					
+					
+					if(!Hist||!HistB||!HistC){
 						DetHit::SetCalibrationDirect(Eset[j],i,0,0,0);
 						continue;
 					}
+					Hist->Add(HistB);
+					Hist->Add(HistC);
 					
 					if(Hist->Integral()>100){
 						TProfile* py=Hist->ProfileY();

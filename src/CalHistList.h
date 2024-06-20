@@ -2,6 +2,44 @@
     TTree* FilterTree=nullptr;
     bool FillFilterTree=false;
    
+    TCutG* Raw_dE_E_Charge_ElasticBeamGate[2]={new TCutG(),new TCutG()};
+    TCutG* Raw_dE_E_Charge_BeamGate[2]={new TCutG(),new TCutG()};
+    TCutG* dEdX_Etot_Charge_ProtonGate[2]={new TCutG(),new TCutG()};
+    TCutG* Raw_dE_E_Charge_4HeGate[2]={new TCutG(),new TCutG()};
+    TCutG* Raw_dE_E_Charge_3HeGate[2]={new TCutG(),new TCutG()};
+    
+    for(unsigned int g=0;g<Inputs.CutGates.size();g++){
+
+        if(Inputs.GateID[g]==0){
+            Raw_dE_E_Charge_ElasticBeamGate[0]=Inputs.CutGates[g];
+            Raw_dE_E_Charge_ElasticBeamGate[1]=Inputs.CutGates[g];
+        }
+        if(Inputs.GateID[g]==1){
+            Raw_dE_E_Charge_BeamGate[0]=Inputs.CutGates[g];
+            Raw_dE_E_Charge_BeamGate[1]=Inputs.CutGates[g];
+        }
+        
+        if(Inputs.GateID[g]==3){
+            dEdX_Etot_Charge_ProtonGate[0]=Inputs.CutGates[g];
+            dEdX_Etot_Charge_ProtonGate[1]=Inputs.CutGates[g];
+        }
+        
+        if(Inputs.GateID[g]==4){
+            Raw_dE_E_Charge_4HeGate[0]=Inputs.CutGates[g];
+        }
+        if(Inputs.GateID[g]==5){
+            Raw_dE_E_Charge_4HeGate[1]=Inputs.CutGates[g];
+        }
+        if(Inputs.GateID[g]==6){
+            Raw_dE_E_Charge_3HeGate[0]=Inputs.CutGates[g];
+        }
+        if(Inputs.GateID[g]==7){
+            Raw_dE_E_Charge_3HeGate[1]=Inputs.CutGates[g];
+        }
+    }
+    
+    
+    
     gROOT->cd();
         if(Inputs.TestInput("OverwriteFilterFile")){
             FilterTreeFile=new TFile("FilterSiliconTree.root","RECREATE");
@@ -41,14 +79,14 @@
             };
             
             
-    vector<vector<TH2F*>> GatedSilicon_dEE;
-    for(auto gate : Inputs.CutGates){
-        TString gatename=gate->GetName();
-        vector<TH2F*> gv;
-        gv.push_back(new TH2F(gatename+"_Gated_Charge_E_dE_A",gatename+"_Gated_Charge_E_dE_A;Charge E;Charge dE",1000,0,8000,500,0,4000));
-        gv.push_back(new TH2F(gatename+"_Gated_Charge_E_dE_B",gatename+"_Gated_Charge_E_dE_B;Charge E;Charge dE",1000,0,8000,500,0,4000));
-        GatedSilicon_dEE.push_back(gv);
-    }
+//     vector<vector<TH2F*>> GatedSilicon_dEE;
+//     for(auto gate : Inputs.CutGates){
+//         TString gatename=gate->GetName();
+//         vector<TH2F*> gv;
+//         gv.push_back(new TH2F(gatename+"_Gated_Charge_E_dE_A",gatename+"_Gated_Charge_E_dE_A;Charge E;Charge dE",1000,0,8000,500,0,4000));
+//         gv.push_back(new TH2F(gatename+"_Gated_Charge_E_dE_B",gatename+"_Gated_Charge_E_dE_B;Charge E;Charge dE",1000,0,8000,500,0,4000));
+//         GatedSilicon_dEE.push_back(gv);
+//     }
         
     
     out.mkdir("Raw/dE_Chan");
@@ -56,6 +94,9 @@
         TH2D* dEEi[2][16];
         for(UShort_t i=0;i<16;i++)dEEi[0][i]=new TH2D(Form("dEEA_%d",i),Form("Charge dE%d vs any E A;Charge E All;Charge dE%d",i,i),1000,0,8000,500,0,4000);
         for(UShort_t i=0;i<16;i++)dEEi[1][i]=new TH2D(Form("dEEB_%d",i),Form("Charge dE%d vs any E B;Charge E All;Charge dE%d",i,i),1000,0,8000,500,0,4000);
+        TH2D* dEdXEi[2][16];
+        for(UShort_t i=0;i<16;i++)dEdXEi[0][i]=new TH2D(Form("dEdXTotA_%d",i),Form("Charge dE%ddX vs any E A;Charge Tot;Charge dE%ddX",i,i),1000,0,8000,500,0,4000);
+        for(UShort_t i=0;i<16;i++)dEdXEi[1][i]=new TH2D(Form("dEdXTotB_%d",i),Form("Charge dE%ddX vs any E B;Charge Tot;Charge dE%ddX",i,i),1000,0,8000,500,0,4000);
     out.cd();
 
     out.mkdir("Raw/E_Chan");
@@ -140,11 +181,14 @@
    out.cd("ForCal/ElasticDataInverse");
    
     TH2F* InvCal_dE[2][16];
+    TH2F* InvCal_dE4He[2][16];
     TH2F* InvCal_dESelf[2][16];
     TH2F* InvCal_dEComb[2][16];
     TH2F* InvCal_dE_E_Proton[2][16];
         for(int i=0;i<16;i++)InvCal_dE[0][i]=new TH2F(Form("InvCal_dE_A_%d",i),Form("InverseCalibration_3He_dE_A_%d_FromE;Charge dE%d;dE (Calc. MeV)",i,i),500,0,3000,500,0,15);
         for(int i=0;i<16;i++)InvCal_dE[1][i]=new TH2F(Form("InvCal_dE_B_%d",i),Form("InverseCalibration_3He_dE_B_%d_FromE;Charge dE%d;dE (Calc. MeV)",i,i),500,0,3000,500,0,15);
+        for(int i=0;i<16;i++)InvCal_dE4He[0][i]=new TH2F(Form("InvCal4He_dE_A_%d",i),Form("InverseCalibration_4He_dE_A_%d_FromE;Charge dE%d;dE (Calc. MeV)",i,i),500,0,3000,500,0,15);
+        for(int i=0;i<16;i++)InvCal_dE4He[1][i]=new TH2F(Form("InvCal4He_dE_B_%d",i),Form("InverseCalibration_4He_dE_B_%d_FromE;Charge dE%d;dE (Calc. MeV)",i,i),500,0,3000,500,0,15);
         for(int i=0;i<16;i++)InvCal_dESelf[0][i]=new TH2F(Form("InvCal_dESelf_A_%d",i),Form("InverseSelfCalibration_3He_dE_A_%d;Charge dE ;dE (MeV)",i),500,0,15,500,0,15);
         for(int i=0;i<16;i++)InvCal_dESelf[1][i]=new TH2F(Form("InvCal_dESelf_B_%d",i),Form("InverseSelfCalibration_3He_dE_B_%d;Charge dE ;dE (MeV))",i),500,0,15,500,0,15);
         for(int i=0;i<16;i++)InvCal_dEComb[0][i]=new TH2F(Form("InvCal_dEComb_A_%d",i),Form("Combine_InverseCalibrations_3He_A_%d;Charge dE; dE",i),500,0,3000,500,0,15);
