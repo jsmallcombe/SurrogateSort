@@ -1,145 +1,103 @@
+//     Particle Gates
+    
+    #include "src/RangeData.h"
 
+    vector<TString> ParticleNames ={"Protons","3He","Alphas"};
+
+    
+    Double_t ProtonX[7] = { 2.65046, 4.12373, 6.24863, 8.82684, 11.8584, 15.1449, 17.2698 };
+    Double_t ProtonY[7] = { 2.48009, 1.7842, 1.22361, 0.914328, 0.740354, 0.52772, 0.411737 };
+    TGraph *Proton_dedx = new TGraph(7,ProtonX,ProtonY);
+
+    Double_t BeamX[8] = { 11.0367, 13.105, 14.8049, 16.4482, 18.7147, 22.0862, 25.4861, 29.4526 };
+    Double_t BeamY[8] = { 10.6182, 8.31787, 7.17738, 6.32684, 5.55362, 4.64509, 4.06518, 3.48527 };
+    TGraph* Beam_dedx = new TGraph(8,BeamX,BeamY);
+
+    Double_t AlphaX[12] = { 12.5472, 13.7186, 14.9486, 16.2372, 17.7015, 19.4586, 20.8644, 23.6172, 27.483, 31.1144, 36.7959, 39.7831 };
+    Double_t AlphaY[12] = { 11.845, 10.3878, 9.30837, 8.36388, 7.58131, 6.82571, 6.33998, 5.61137, 4.74784, 4.2621, 3.61445, 3.29063 };
+    TGraph *Alpha_dedx = new TGraph(12,AlphaX,AlphaY);
+    
+    vector<TGraph*> GateRoughID ={Proton_dedx,Beam_dedx,Alpha_dedx};
+    vector<int> GateID ={0,1,2};
+
+    int i_Si=0,i_Al=1,i_Am0=2;
+
+    vector<vector<TGraph*>> Range_um ={{H1_RangeSilicon_umMeV,H1_RangeSilicon_umMeV,H1_RangeSilicon_umMeV},
+                                            {He3_RangeSilicon_umMeV,He3_RangeAlBacking_umMeV,He3_RangeTarget_umMeV},
+                                                {He4_RangeSilicon_umMeV,He4_RangeAlBacking_umMeV,He4_RangeTarget_umMeV}};
+                                                
+    vector<vector<TGraph*>> Energy_MeV ={{H1_EnergySilicon_MeVum,H1_EnergySilicon_MeVum,H1_EnergySilicon_MeVum},
+                                            {He3_EnergySilicon_MeVum,He3_EnergyAlBacking_MeVum,He3_EnergyTarget_MeVum},
+                                                {He4_EnergySilicon_MeVum,He4_EnergyAlBacking_MeVum,He4_EnergyTarget_MeVum}};
+
+    vector<TCutG*> dedx_Gate={new TCutG(),new TCutG(),new TCutG()};
+
+    for(unsigned int g=0;g<Inputs.CutGates.size();g++){
+        for(unsigned int i=0;i<GateID.size();i++){
+            if(GateID[i]==Inputs.GateID[g]){
+                dedx_Gate[i]=Inputs.CutGates[g];
+            }
+        }
+    }
 
     out.cd();
 
-    TH2D* ChanE=new TH2D("ChanE","ChanE;Channe;E",totalchans,0,totalchans,1000,0,8000);
-
-   out.mkdir("TimeHist");
-   out.cd("TimeHist");
+    TH2D* ChanADC=new TH2D("ChanADC","ChanADC;Channel;ADC Charge",totalchans,0,totalchans,1000,0,8000);
+    TH2D* ChanE=new TH2D("ChanE","ChanE;Channel;Energy (MeV)",totalchans,0,totalchans,1000,0,50);
     
-        TH2D* dEEtime[2]={
-            new TH2D("dEvEdT_A","dEvE#DeltaT_A;dE Channel Index;dE-E #DeltaT",16,0,16,300,-3E3,3E3),
-            new TH2D("dEvEdT_B","dEvE#DeltaT_B;dE Channel Index;dE-E #DeltaT",16,0,16,300,-3E3,3E3)
-        };
-        TH2D* EdEtime[2]={
-            new TH2D("EvdEdT_A","EvdE#DeltaT_A;E Channel Index;dE-E #DeltaT",16,0,16,300,-3E3,3E3),
-            new TH2D("EvdEdT_B","EvdE#DeltaT_B;E Channel Index;dE-E #DeltaT",16,0,16,300,-3E3,3E3)
-        };
-        TH2D* SiHPGeT[2]={
-            new TH2D("SiHPGeT_A","SiHPGe#DeltaT_A;HPGe Index;dE-HPGe #DeltaT",3,0,3,300,-3E3,3E3),
-            new TH2D("SiHPGeT_B","SiHPGe#DeltaT_B;HPGe Index;dE-HPGe #DeltaT",3,0,3,300,-3E3,3E3)
-        };
+    TH2D* dE_E_Raw_Sum= new TH2D("dE_E_Raw_Sum","dE_E_Raw_Sum;E (MeV);dE (MeV)",1000,0,50,500,0,15);
         
-        TH2D* SiSolarT = new TH2D("SiSolarT","SiSolar#DeltaT;Solar Index;dE-Solar #DeltaT",32,0,32,300,-3E3,3E3);
-        TH2D* SiLaBrT = new TH2D("SiLaBrT","SiLaBr#DeltaT;LaBr Index;dE-LaBr #DeltaT",4,0,4,300,-3E3,3E3);
+    TH2D* dE_E_Raw[2]={
+        new TH2D("dE_E_Raw_A","dE_E_Raw_A;E (MeV);dE (MeV)",1000,0,50,500,0,15),
+        new TH2D("dE_E_Raw_B","dE_E_Raw_B;E (MeV);dE (MeV)",1000,0,50,500,0,15)
+    };
+    
+    TH2D* dEdX_Etot_Sum= new TH2D("dEdX_Etot_Sum","dEdX_Etot_Sum;E_{tot.} (MeV);dE/dX (arb.)",1000,0,50,500,0,15);
+    
+    TH2D* dEdX_Etot_Corrected= new TH2D("dEdX_Etot_Corrected","dEdX_Etot_Sum;E_{tot.} (MeV);dE/dX (arb.)",1000,0,50,500,0,15);
+    
+    vector<TH2D*> Gate_dE_dX;
+    vector<TH2D*> Gate_E_theta;
+    vector<TH2D*> Gate_E_costheta;
+    vector<TH2D*> Gate_E_thetaBlur;
+    vector<TH2D*> Gate_E_costhetaBlur;
+    vector<TH1D*> Gate_E_strad;
+    for(auto T : ParticleNames){
+        out.mkdir(T);
+        out.cd(T);
         
-        TH2D* LaBrGammaT = new TH2D("LaBrGammaT","LaBrAll#gamma#DeltaT;LaBr Index;LaBr-#gamma #DeltaT",4,0,4,300,-3E3,3E3);
-        TH2D* HPGeGammaT = new TH2D("HPGeGammaT","HPGeAll#gamma#DeltaT;HPGe Index;HPGe-#gamma #DeltaT",4,0,4,300,-3E3,3E3);
+        Gate_dE_dX.push_back(new TH2D("dEdX_Etot_sum_"+T,"dEdX_Etot_sum_"+T+";E_{tot.} (MeV);dE/dX (arb.)",1000,0,50,500,0,15));
+        Gate_E_theta.push_back(new TH2D("Etarg_theta_"+T,"Etarg_#theta_"+T+";E_{targ.} (MeV);#theta (deg.)",1000,0,50,180,90,180));
+        Gate_E_costheta.push_back(new TH2D("Etarg_costheta_"+T,"Etarg_cos(#theta)_"+T+";E_{targ.} (MeV);cos(#theta)",1000,0,50,200,-1,0));
+        Gate_E_thetaBlur.push_back(new TH2D("Etarg_thetaBlur_"+T,"Etarg_#theta_"+T+";E_{targ.} (MeV);#theta (deg.)",1000,0,50,180,90,180));
+        Gate_E_costhetaBlur.push_back(new TH2D("Etarg_costhetaBlur_"+T,"Etarg_cos(#theta)_"+T+";E_{targ.} (MeV);cos(#theta)",1000,0,50,200,-1,0));
+        Gate_E_strad.push_back(new TH1D("Etarg_strad_"+T,"Etarg_strad_"+T+";E_{targ.} (MeV);Counts/strad",1000,0,50));
         
-   out.cd();
-   
-    TH2D* HPGeHPGe = new TH2D("HPGeHPGe","HPGeHPGe;HPGe E_{#gamma};HPGe E_{#gamma}",1000,0,8000,1000,0,8000);
-    TH2D* HPGeLaBr = new TH2D("HPGeLaBr","HPGeLaBr;HPGe E_{#gamma};LaBr E_{#gamma}",1000,0,8000,1000,0,8000);
-   
-
-    TH2D* dEE[2]={
-        new TH2D("dEEA","dEEA;E;dE",1000,0,8000,500,0,4000),
-        new TH2D("dEEB","dEEB;E;dE",1000,0,8000,500,0,4000)
-    };
-
-   TH2D* dEEtot[2]={
-       new TH2D("dEEtotA","dEEtotA;Etot;dE",1000,0,8000,500,0,4000),
-       new TH2D("dEEtotB","dEEtotB;Etot;dE",1000,0,8000,500,0,4000)
-    };
-
-
-   TH2D* dEEffEtot[2]={
-       new TH2D("dEdX_Etot_A","dEdX_Etot_A;E tot;dE/dX",1000,0,8000,500,0,4000),
-       new TH2D("dEdX_Etot_B","dEdX_Etot_B;E tot;dE/dX",1000,0,8000,500,0,4000)
-    };
-    
-    
-   TH2F* RunFile_dE[2][16];
-   TH2F* RunFile_E[2][16];
-   out.mkdir("SiliconVSrun");
-   out.cd("SiliconVSrun");
-    for(int i=0;i<16;i++){
-        RunFile_dE[0][i]=new TH2F(Form("RunFile_dE_A_%d",i),Form("RunFile_dE_A_%d;Run;dE",i),FileN,0,FileN,500,0,4000);
-        TAxis *x=RunFile_dE[0][i]->GetXaxis();
-        for(unsigned int b=0;b<Inputs.InputFiles.size();b++)x->SetBinLabel(b+1,StripFileName(Inputs.InputFiles[b]));
+        
+        gROOT->cd();
     }
-    for(int i=0;i<16;i++)RunFile_E[0][i]=new TH2F(Form("RunFile_E_A_%d",i),Form("RunFile_E_A_%d;Run;E",i),FileN,0,FileN,1000,0,8000);
-    for(int i=0;i<16;i++)RunFile_dE[1][i]=new TH2F(Form("RunFile_dE_B_%d",i),Form("RunFile_dE_B_%d;Run;dE",i),FileN,0,FileN,500,0,4000);
-    for(int i=0;i<16;i++)RunFile_E[1][i]=new TH2F(Form("RunFile_E_B_%d",i),Form("RunFile_E_B_%d;Run;E",i),FileN,0,FileN,1000,0,8000);
-    //Multiple loops so order in file is nicer
-   out.cd();
- 
-   
-   out.mkdir("SiliconCal");
-   out.cd("SiliconCal");
-   TH2D* dECal[2]={
-       new TH2D("dECalA","dECalA Single E strip conicince;Index;dE",16,0,16,500,0,4000),
-       new TH2D("dECalB","dECalB Single E strip conicince;Index;dE",16,0,16,500,0,4000)
-    };
-   TH2D* dEdXCal[2]={
-       new TH2D("dEdXCalA","dEdXCalA Single E strip conicince;Index;dEdX",16,0,16,500,0,4000),
-       new TH2D("dEdXCalB","dEdXCalB Single E strip conicince;Index;dEdX",16,0,16,500,0,4000)
-    };
-   TH2D* ECal[2]={
-       new TH2D("ECalA","ECalA Single dE strip conicince;Index;E",16,0,16,100,0,8000),
-       new TH2D("ECalB","ECalB Single dE strip conicince;Index;E",16,0,16,100,0,8000)
-    };
-   out.cd();
-   int CalGateI=0;
-   
-    for(unsigned int g=0;g<Inputs.CutGates.size();g++){
-        TString gatename=Inputs.CutGates[g]->GetName();
-        if(gatename.Contains("eam"))CalGateI=g;
-    }
-   
-   
-
-   out.mkdir("dE_Chan");
-   out.cd("dE_Chan");
-    TH2D* dEEi[2][16];
-    for(UShort_t i=0;i<16;i++)dEEi[0][i]=new TH2D(Form("dEEA_%d",i),Form("dE%d vs any E A;E;dE%d",i,i),1000,0,8000,500,0,4000);
-    for(UShort_t i=0;i<16;i++)dEEi[1][i]=new TH2D(Form("dEEB_%d",i),Form("dE%d vs any E B;E;dE%d",i,i),1000,0,8000,500,0,4000);
-   out.cd();
-
-   out.mkdir("E_Chan");
-   out.cd("E_Chan");
-    TH2D* EdEi[2][16];
-    for(UShort_t i=0;i<16;i++)EdEi[0][i]=new TH2D(Form("EdEA_%d",i),Form("E%d vs any dE A;E%d;dE",i,i),1000,0,8000,500,0,4000);
-    for(UShort_t i=0;i<16;i++)EdEi[1][i]=new TH2D(Form("EdEB_%d",i),Form("E%d vs any dE B;E%d;dE",i,i),1000,0,8000,500,0,4000);
-   out.cd();
-   
-   TH2D* ThetaPhiSum=new TH2D("ThetaPhi","ThetaPhi;Theta #theta [deg.];Phi #Phi [deg.];",180,0,180,360,0,360);
-   TH2D* ThetaPhi[2]={
-       new TH2D("ThetaPhiA","ThetaPhiA;Theta;Phi",180,0,180,360,0,360),
-       new TH2D("ThetaPhiB","ThetaPhiB;Theta;Phi",360,0,180,360,0,360)
-    };
-    
-    
-    vector<TH1D*> GateGamma,GateLaBr;
-    vector<TH2F*> GatedSiliconTheta;
-    for(auto gate : Inputs.CutGates){
-        TString gatename=gate->GetName();
-        GateGamma.push_back(new TH1D(gatename+"GatedGamma",gatename+";E gamma",2000,0,8000));
-        GateLaBr.push_back(new TH1D(gatename+"GatedLaBr",gatename+";E LaBr",2000,0,8000));
-        GatedSiliconTheta.push_back(new TH2F(gatename+"GatedSiliconTheta",gatename+";Tot E;Theta",2000,0,8000,360,0,360));
-    }
-    
-    
     
     
     
     gROOT->cd();
     
-    TString GammaTreeFN(Inputs.OutFilename);
-    GammaTreeFN.Remove(GammaTreeFN.Length() - 5, 5);
-    GammaTreeFN.Append("_GammaTree.root");
-    
-    TFile GammaTreeFile(GammaTreeFN,"RECREATE");
-    GammaTreeFile.cd();
-        TTree gammatree("GammaTree", "A simple TTree");
-        
-        Double_t GamE;
-        UShort_t Gami;
-        
-        // Create branches in the tree
-        gammatree.Branch("energy", &GamE, "energy/D");
-        gammatree.Branch("index", &Gami, "index/s");
-        
-        gammatree.AutoSave();
-    gROOT->cd();
-    
+//     TString GammaTreeFN(Inputs.OutFilename);
+//     GammaTreeFN.Remove(GammaTreeFN.Length() - 5, 5);
+//     GammaTreeFN.Append("_GammaTree.root");
+//     
+//     TFile GammaTreeFile(GammaTreeFN,"RECREATE");
+//     GammaTreeFile.cd();
+//         TTree gammatree("GammaTree", "A simple TTree");
+//         
+//         Double_t GamE;
+//         UShort_t Gami;
+//         
+//         // Create branches in the tree
+//         gammatree.Branch("energy", &GamE, "energy/D");
+//         gammatree.Branch("index", &Gami, "index/s");
+//         
+//         gammatree.AutoSave();
+//     gROOT->cd();
+//     
+
+   bool PartSort=Inputs.TestInput("PartSort");

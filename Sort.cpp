@@ -137,7 +137,8 @@ int main(int argc, char *argv[]){
 //             double dE=(*tAdc)[i];
 			
 
-            ChanE->Fill(ModChanList[hit.Mod()]+hit.Chan(),hit.Charge());
+            ChanE->Fill(ModChanList[hit.Mod()]+hit.Chan(),hit.Energy());
+            ChanADC->Fill(ModChanList[hit.Mod()]+hit.Chan(),hit.Charge());
 			
 			switch(hit.Type()) {
 				case DetHit::HPGe:

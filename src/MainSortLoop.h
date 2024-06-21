@@ -6,10 +6,7 @@
             if(TelescopeHit::AB(dE)!=TelescopeHit::AB(E))continue;// Check same detector
 
             double dT=dE.Time()-E.Time(); // Time difference
-            
-            dEEtime[TelescopeHit::AB(dE)]->Fill(dE.Index(),dT);
-            EdEtime[TelescopeHit::AB(dE)]->Fill(E.Index(),dT);
-            
+
             if(abs(dT)<100){//If dE inside true coiccidence timegate (relaxed from 60)
                 SiHits.push_back(TelescopeHit(dE,E));
             }
@@ -20,106 +17,101 @@
     // Itterate through constructed good telescope hits
     for(auto& Si : SiHits){
         
-        TVector3 World=Si.GetPos(true);
+        TVector3 World=Si.GetPos(false);
         
         double EffThick=std::abs(cos(Si.GetPos(false,true).Theta()));
-        double Theta=World.Theta()/TMath::DegToRad();
+        double ThetaBlur=Si.GetPos(true).Theta();
+        double Theta=World.Theta();
+        double ThetaDeg=Theta/TMath::DegToRad();
+        double CosTheta=cos(Theta);
+        double AbdCos=std::abs(CosTheta);
         double Phi=PhiOffset(World.Phi())/TMath::DegToRad();
 
-        double E=Si.E().Charge();
-        double dE=Si.dE().Charge();
+        double E=Si.E().Energy();
+        double dE=Si.dE().Energy();
         double Etot=E+dE;
         double dEdX=dE*EffThick;
         
-        dEE[Si.AB()]->Fill(E,dE);
-        dEEtot[Si.AB()]->Fill(Etot,dE);
-        dEEi[Si.AB()][Si.dE().Index()]->Fill(E,dE);
-        EdEi[Si.AB()][Si.E().Index()]->Fill(E,dE);
-        dEEffEtot[Si.AB()]->Fill(Etot,dEdX);
-        ThetaPhi[Si.AB()]->Fill(Theta,Phi);
-        ThetaPhiSum->Fill(Theta,Phi);
+        dE_E_Raw_Sum->Fill(E,dE);
+        dE_E_Raw[Si.AB()]->Fill(E,dE);
+        dEdX_Etot_Sum->Fill(Etot,dEdX);
         
-        RunFile_dE[Si.AB()][Si.dE().Index()]->Fill(FileI,dE);
-        RunFile_E[Si.AB()][Si.E().Index()]->Fill(FileI,E);
-        
-        // Itterate through the loaded TCutG and setting the IDGateTest vector if the current event is inside that event
-        for(unsigned int g=0;g<Inputs.CutGates.size();g++){
-            IDGateTest[g]=Inputs.CutGates[g]->IsInside(Etot,dEdX);
-            if(IDGateTest[g]){
-                    GatedSiliconTheta[g]->Fill(Etot,World.Theta()/TMath::DegToRad());
+        double NearestY=50;int BestGate=0;
+        for(unsigned int g=0;g<GateRoughID.size();g++){
+            double YCalc=GateRoughID[g]->Eval(Etot);
+            double Ydist=abs(dEdX-YCalc);
+            if(Ydist<NearestY){
+                BestGate=g;
+                NearestY=Ydist;
             }
         }
         
+        for(unsigned int g=0;g<ParticleNames.size();g++){
+            
+            // Range before E detector active region
+            double PreRange=Range_um[g][i_Si]->Eval(E);  
+            
+            // Energy at 3 points (start,middle,end) of the active region of the dE, calulcated exclusively from the E detector energy
+            double CalcEnergyPostDeltaActive=Energy_MeV[g][i_Si]->Eval(PreRange+((E_Dead_um+dE_BackDead_um)/EffThick)); 
+            double CalcEnergyMidDeltaActive=Energy_MeV[g][i_Si]->Eval(PreRange+((E_Dead_um+dE_Thickness_um*0.5)/EffThick)); 
+            double CalcEnergyPreDeltaActive=Energy_MeV[g][i_Si]->Eval(PreRange+((E_Dead_um+dE_Thickness_um-dE_FrontDead_um)/EffThick));
+        
+            // dE/dX "measurement" from the above range calculations
+            double dECalc=CalcEnergyPreDeltaActive-CalcEnergyPostDeltaActive;
+            double dEdXCalc=dECalc*EffThick;
+        
+            // dE/dX from the actual dE detector energy
+            double dEdXDirect=dE*EffThick;
+        
+            // Sum energy at midpoint using actual dE+E measurement (and deadlayer projection from E)
+            double EnergyMidDeltaActive=CalcEnergyPostDeltaActive+dE*0.5;
+        
+            // Taking and average because the dE calibration is a little wonky 
+            // Should compare without this average once the calibration is better
+            double EnergyMidDeltaActive_Average=(CalcEnergyMidDeltaActive+EnergyMidDeltaActive)*0.5;
+            double dEdX_Average=(dEdXDirect+dEdXCalc)*0.5;
 
-        // Silicon + Particle loops
-        
-        for(auto& gHit : HPGe){
-            SiHPGeT[Si.AB()]->Fill(gHit.Index(),Si.Time()-gHit.Time());
+            Gate_dE_dX[g]->Fill(EnergyMidDeltaActive_Average,dEdXDirect);
             
-            for(unsigned int g=0;g<IDGateTest.size();g++){
-                if(IDGateTest[g]){
-                    GateGamma[g]->Fill(gHit.Energy());
-                    GamE=gHit.Energy();
-                    Gami=gHit.Index();
-                    gammatree.Fill();
-                    
-                    
-                    if(g==CalGateI){//
-                        // Plot silicon strips vs selected oposing strip to ensure fixed angle/energy
-                        if(Si.dE().Index()==14){
-                            ECal[Si.AB()]->Fill(Si.E().Index(),E);
-                        }
-                        if(Si.E().Index()==6||Si.E().Index()==9){
-                            dECal[Si.AB()]->Fill(Si.dE().Index(),dE);
-                            dEdXCal[Si.AB()]->Fill(Si.dE().Index(),dE);
-                        }
-                    }
-                }
+            if(BestGate==g){
+                dEdX_Etot_Corrected->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
             }
             
-        }
-        for(auto& sHit : Solar){
-            SiSolarT->Fill(sHit.Index(),Si.Time()-sHit.Time());
-        }
-        for(auto& lHit : LaBr){
-            SiLaBrT->Fill(lHit.Index(),Si.Time()-lHit.Time());
-            
-            for(unsigned int g=0;g<IDGateTest.size();g++){
-                if(IDGateTest[g]){
-                    GateLaBr[g]->Fill(lHit.Energy());
-                }
-            }
-        }
-    }
-
-    // Loops of gammas, ignoring silicon events
-    
-    
-    // Symetrised by total loop twice rather than a j>i inner loop, slower but neat
-    for(auto& gHit : HPGe){
-        for(auto& GHit : HPGe){//Need t
-            if (&gHit == &GHit)continue; //skip self comparison
+            if(dedx_Gate[g]->IsInside(EnergyMidDeltaActive_Average,dEdXDirect)){
                 
-            HPGeHPGe->Fill(gHit.Energy(),GHit.Energy());
-            HPGeGammaT->Fill(gHit.Index(),gHit.Time()-GHit.Time());
+                // Uses an average of the measured dE and the dE value calculated from E measurement (as E calibration is better).
+                double EnergyAtStartOfActiveDE=(CalcEnergyPreDeltaActive+(CalcEnergyPostDeltaActive+dE))*0.5;
+                
+                double RangeAtStartOfActiveDE=Range_um[g][i_Si]->Eval(EnergyAtStartOfActiveDE);  
+                double EnergyAtStartOfDE=Energy_MeV[g][i_Si]->Eval(RangeAtStartOfActiveDE-(dE_FrontDead_um/EffThick));
+                double RangeInBacking=Range_um[g][i_Al]->Eval(EnergyAtStartOfDE);
+                double EnergyBeforeBacking=Energy_MeV[g][i_Al]->Eval(RangeInBacking-(AlBacking_um/CosTheta));
+                double RangeInTarget=Range_um[g][i_Am0]->Eval(EnergyBeforeBacking);
+                double EnergyAtCenter=Energy_MeV[g][i_Am0]->Eval(RangeInTarget-(target_half_um/CosTheta));
+            
+                Gate_E_theta[g]->Fill(EnergyAtCenter,ThetaDeg);
+                Gate_E_costheta[g]->Fill(EnergyAtCenter,CosTheta);
+                Gate_E_thetaBlur[g]->Fill(EnergyAtCenter,ThetaBlur/TMath::DegToRad());
+                Gate_E_costhetaBlur[g]->Fill(EnergyAtCenter,cos(ThetaBlur));
+                Gate_E_strad[g]->Fill(EnergyAtCenter);
+            }
         }
         
-        for(auto& lHit : LaBr){
-            HPGeGammaT->Fill(gHit.Index(),gHit.Time()-lHit.Time());
-            LaBrGammaT->Fill(lHit.Index(),lHit.Time()-gHit.Time());
-            HPGeLaBr->Fill(gHit.Energy(),lHit.Energy());
-        }
-    }
-    
-    for(auto& lHit : LaBr){
-        for(auto& LHit : LaBr){
-            if (&lHit == &LHit)continue; //skip self comparison
-            
-            LaBrGammaT->Fill(lHit.Index(),lHit.Time()-LHit.Time());
-        }
     }
 
     
     if(EndOfRun){
-        GammaTreeFile.Write(0,TObject::kWriteDelete);//Avoid those annoying multiple keys
+//         GammaTreeFile.Write(0,TObject::kWriteDelete);//Avoid those annoying multiple keys
+        
+        // End of last run
+        if(jentry+1==nentries){
+            cout<<endl<<"Scaling by hardcoded solid angle"<<endl;
+            for(auto g : Gate_E_strad){
+                g->Scale(1/1.52333);
+            }
+        }
+    }
+
+    if(PartSort){  
+            if(jentry==nentries/10)jentry=nentries-2;
     }

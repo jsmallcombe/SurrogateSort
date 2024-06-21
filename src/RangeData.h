@@ -5,7 +5,8 @@
     double target_um=1E-2*target_thickness_ug_cm2/target_density_g_cm3;
     double target_half_um=target_um/2;
     
-    double AlBacking_half_um=0.5;
+    double AlBacking_um=1.0;
+    double AlBacking_half_um=AlBacking_um*0.5;
     
     double dE_Thickness_um=106; //adjusted from official 111 because that works
     double dE_FrontDead_um=0.5065;
@@ -38,7 +39,7 @@ Double_t Graph_fx2as[51] = { 1.82676, 1.9766, 2.12685, 2.2978, 2.45095, 2.78151,
    TGraph *He3_ASTAR_RangeSilicon_umMeV = new TGraph(51,Graph_fy2as,Graph_fx2as);
    //NIST ASTAR DATA, Mass adjusted based on SRIM
    
-   TGraph *He3_EnergySilicon_MeVum = He3_SRIM_RangeSilicon_umMeV;  
+   TGraph *He3_EnergySilicon_MeVum = He3_ASTAR_EnergySilicon_MeVum;  
    TGraph *He3_RangeSilicon_umMeV = He3_ASTAR_RangeSilicon_umMeV;
 
    
