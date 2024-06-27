@@ -9,6 +9,21 @@
 
             if(abs(dT)<100){//If dE inside true coiccidence timegate (relaxed from 60)
                 SiHits.push_back(TelescopeHit(dE,E));
+                
+                
+                for(auto& E_b : SiERaw){
+                    if(&E==&E_b||E.Index()==E_b.Index())continue;
+                    
+                    if(abs(dE.Time()-E_b.Time())<100){
+
+                        double EffTh;
+                        if(E.Energy()>E_b.Energy())EffTh=std::abs(cos(TelescopeHit(dE,E).GetPos(false,true).Theta()));
+                        else EffTh=std::abs(cos(TelescopeHit(dE,E_b).GetPos(false,true).Theta()));
+                        double Et=E.Energy()+E_b.Energy()+dE.Energy();
+                        dEdX_Etot_Sum_Mult2->Fill(Et,dE.Energy()*EffTh);
+                        
+                    }
+                }
             }
         }
     }

@@ -51,8 +51,10 @@
     };
     
     TH2D* dEdX_Etot_Sum= new TH2D("dEdX_Etot_Sum","dEdX_Etot_Sum;E_{tot.} (MeV);dE/dX (arb.)",1000,0,50,500,0,15);
+    TH2D* dEdX_Etot_Sum_Mult2= new TH2D("dEdX_Etot_Sum_Mult2","dEdX_Etot_Sum_Mult2;E_{tot.} (MeV);dE/dX (arb.)",1000,0,50,500,0,15);
     
     TH2D* dEdX_Etot_Corrected= new TH2D("dEdX_Etot_Corrected","dEdX_Etot_Sum;E_{tot.} (MeV);dE/dX (arb.)",1000,0,50,500,0,15);
+    
     
     vector<TH2D*> Gate_dE_dX;
     vector<TH2D*> Gate_E_theta;
