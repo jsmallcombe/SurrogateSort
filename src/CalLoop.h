@@ -195,6 +195,3 @@
     }
     
 
-  if(PartSort){  
-        if(jentry==nentries/10)jentry=nentries-2;
-  }

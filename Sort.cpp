@@ -60,6 +60,10 @@ int main(int argc, char *argv[]){
 
 	cout<<endl<<"Opening output file for writing :"<<Inputs.OutFilename<<endl;
 	TFile out(Inputs.OutFilename,"RECREATE");
+	out.cd();
+		TH2D* ChanADC=new TH2D("ChanADC","ChanADC;Channel;ADC Charge",totalchans,0,totalchans,1000,0,8000);
+		TH2D* ChanE=new TH2D("ChanE","ChanE;Channel;Energy (MeV)",totalchans,0,totalchans,1000,0,50);
+	gROOT->cd();
 
 	TChain* DataChain = Inputs.DataTree("OutTTree01");
 	TChain *tree  = DataChain;
@@ -98,9 +102,11 @@ int main(int argc, char *argv[]){
 	vector<TelescopeHit> SiHits;
 	vector<bool> IDGateTest(Inputs.CutGates.size(),false);
 	
-	bool EndOfRun=false;
 	cout<<endl;
-		
+	
+	bool EndOfRun=false;
+	bool PartSort=Inputs.TestInput("PartSort");
+	
 	// Main Loop 
 	 
     for(long jentry=0;jentry<nentries;jentry++){
@@ -180,6 +186,10 @@ int main(int argc, char *argv[]){
 
 		if(jentry%10000==0){
 		cout<<setiosflags(ios::fixed)<<std::setprecision(2)<<100.*(double)jentry/nentries<<" % complete"<<"\r"<<flush;
+		}
+			
+		if(PartSort){  
+				if(jentry==nentries/10)jentry=nentries-2;
 		}
 	}
 

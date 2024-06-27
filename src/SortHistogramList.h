@@ -42,8 +42,6 @@
 
     out.cd();
 
-    TH2D* ChanADC=new TH2D("ChanADC","ChanADC;Channel;ADC Charge",totalchans,0,totalchans,1000,0,8000);
-    TH2D* ChanE=new TH2D("ChanE","ChanE;Channel;Energy (MeV)",totalchans,0,totalchans,1000,0,50);
     
     TH2D* dE_E_Raw_Sum= new TH2D("dE_E_Raw_Sum","dE_E_Raw_Sum;E (MeV);dE (MeV)",1000,0,50,500,0,15);
         
@@ -100,4 +98,3 @@
 //     gROOT->cd();
 //     
 
-   bool PartSort=Inputs.TestInput("PartSort");

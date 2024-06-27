@@ -1,77 +1,92 @@
-        std::fill(GateMult.begin(), GateMult.end(), 0);
+ 
+ for(auto& dE : SidERaw){
+    for(auto& E : SiERaw){
         
-        NN->Fill(tAdc->size(),tNum);
+        bool Select=((dE.Index()==6||dE.Index()==8)&&(E.Index()<6)&&(E.Index()!=2)&&(E.Index()!=3));
 
-        for(UShort_t i=0;i<Nhit;i++){  // Loop over hits from event vector 
-			
-            int Mod_i=(*tMod)[i];
-            int Chan_i=(*tCh)[i];
-            double Time_i=(*tTs)[i];
-            double dE_i=(*tAdc)[i];
-            ChanE->Fill(ModChanList[Mod_i]+Chan_i,dE_i);
-            ChanM->Fill(ModChanList[Mod_i]+Chan_i,tNum);
-            
-            GateMult[ModChanList[Mod_i]+Chan_i]++;
-            
-            for(UShort_t j=i+1;j<Nhit;j++){  // Loop over remaining hits from event vector
+        if(TelescopeHit::AB(dE)!=TelescopeHit::AB(E))continue;// Check same detector
+        double dT=dE.Time()-E.Time(); // Time difference
+        
+        dE_dT[TelescopeHit::AB(dE)]->Fill(dT,dE.Index());
+        E_dT[TelescopeHit::AB(dE)]->Fill(dT,E.Index());
+        
+        for(unsigned int g=0;g<Inputs.CutGates.size();g++){
+            if(Inputs.GateID[g]==0){
                 
-                        
-                int Mod_j=(*tMod)[j];
-                int Chan_j=(*tCh)[j];
-                double Time_j=(*tTs)[j];
-                double dE_j=(*tAdc)[j];
-
-                
-                ChanCo->Fill(ModChanList[Mod_i]+Chan_i,ModChanList[Mod_j]+Chan_j);
-                ChanCo->Fill(ModChanList[Mod_j]+Chan_j,ModChanList[Mod_i]+Chan_i);
-                
-                if(abs(Time_j-Time_i)<100){
-                    
-                    
-                    GateMult[ModChanList[Mod_i]+Chan_i]++;
-                    GateMult[ModChanList[Mod_j]+Chan_j]++;
-                    
-                    ChanCoGate->Fill(ModChanList[Mod_i]+Chan_i,ModChanList[Mod_j]+Chan_j);
-                    ChanCoGate->Fill(ModChanList[Mod_j]+Chan_j,ModChanList[Mod_i]+Chan_i);
-                    
-                    if(Mod_j==Mod_i&&Chan_i==Chan_j){
-                        
-                        if(Mod_j==2){
-                            
-                            if(Chan_i>15){
-                                SelfEnergydE[0][Chan_i-16]->Fill(dE_i,dE_j);
-                                SelfEnergydE[0][Chan_i-16]->Fill(dE_j,dE_i);
-                                SelfTimedE[0]->Fill(Chan_i-16,Time_j-Time_i);
-                            }else{
-                                SelfEnergyE[0][Chan_i]->Fill(dE_i,dE_j);
-                                SelfEnergyE[0][Chan_i]->Fill(dE_j,dE_i);
-                                
-                                SelfTimeE[0]->Fill(Chan_i,Time_j-Time_i);
-                                
-                            }
+                if(abs(dT)<100){
+                    if(Inputs.CutGates[g]->IsInside(E.Energy(),dE.Energy())){
+                        if(TelescopeHit::AB(dE)==0){
+                            Run_A_arb->Fill(jentry);
+                            RunFileCount[0]->Fill(FileI);
+                        }else{
+                            Run_B_arb->Fill(jentry);
+                            RunFileCount[1]->Fill(FileI);
                         }
-                        if(Mod_j==3){
-                            if(Chan_i>15){
-                                SelfEnergyE[1][Chan_i-16]->Fill(dE_i,dE_j);
-                                SelfEnergyE[1][Chan_i-16]->Fill(dE_j,dE_i);
-                                SelfTimeE[1]->Fill(Chan_i-16,Time_j-Time_i);
-                            }else{
-                                SelfEnergydE[1][Chan_i]->Fill(dE_i,dE_j);
-                                SelfEnergydE[1][Chan_i]->Fill(dE_j,dE_i);
-                                SelfTimedE[1]->Fill(Chan_i,Time_j-Time_i);
-                            }
-                        }
+                        
                     }
                 }
-                
-                if(abs(Time_j-Time_i)>=100&&abs(Time_j-Time_i)<200){
-                    ChanCoGateAnti->Fill(ModChanList[Mod_i]+Chan_i,ModChanList[Mod_j]+Chan_j);
-                    ChanCoGateAnti->Fill(ModChanList[Mod_j]+Chan_j,ModChanList[Mod_i]+Chan_i);
-                }
-                
             }
-		}
-		
-		for(int i=0;i<totalchans;i++){
-            if(GateMult[i]>0)ChanMgate->Fill(i,GateMult[i]);
         }
+        
+        if(TelescopeHit::AB(dE)!=1)continue;// Only B detector
+
+            if(Select)dTselect->Fill(dT);
+            dTB->Fill(dT);
+   
+           for(unsigned int g=0;g<Inputs.CutGates.size();g++){
+                if(Inputs.GateID[g]==3){
+                    if(Inputs.CutGates[g]->IsInside(E.Energy(),dE.Energy())){
+                        dTgate->Fill(dT);
+                    }
+                }
+            }
+        
+        if(abs(dT)<100){
+            
+            dE_E_Raw_Sum->Fill(E.Energy(),dE.Energy());
+            
+            
+            dE_E_B->Fill(E.Energy(),dE.Energy());
+            if(!Select)dE_E_B_Selected->Fill(E.Energy(),dE.Energy());
+            
+            for(unsigned int g=0;g<Inputs.CutGates.size();g++){
+                if(Inputs.GateID[g]==3){
+                    if(Inputs.CutGates[g]->IsInside(E.Energy(),dE.Energy())){
+                        dE_E_B_Gate->Fill(E.Energy(),dE.Energy());
+                        ChandEE->Fill(E.Index(),dE.Index());
+                        Run_Gate->Fill(jentry);
+                        RunFileCount[3]->Fill(FileI);
+                    }
+                }
+            }
+            
+            
+        }
+    }
+ }
+
+if(EndOfRun){
+
+    // End of last run
+    if(jentry+1==nentries){
+        
+        for(int b=1;b<=Run_A_arb->GetNbinsX();b++){
+            double A=Run_A_arb->GetBinContent(b);
+            double B=Run_B_arb->GetBinContent(b);
+            if(B>0){
+                Run_AB_Ratio->SetBinContent(b,A/B);
+            }
+        }
+        
+        
+        for(int b=1;b<=RunFileCount[0]->GetNbinsX();b++){
+            double A=RunFileCount[0]->GetBinContent(b);
+            double B=RunFileCount[1]->GetBinContent(b);
+            if(B>0){
+                RunFileCount[2]->SetBinContent(b,A/B);
+            }
+        }
+        
+        
+    }
+}
