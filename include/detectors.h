@@ -35,7 +35,7 @@ class DetHit{
     
     public:
         
-    enum DetType{HPGe,LaBr,SiDeltaE,Si,SiDeltaE_B,Si_B,Solar};
+    enum DetType{HPGe,LaBr,SiDeltaE,Si,SiDeltaE_B,Si_B,Solar,Dice};
     
     static void SetCalibrationParam(UShort_t Mod,UShort_t Chan,double Pol0=0, double Pol1=1,double Pol2=0);
     static array<double,3> GetCal(UShort_t Mod,UShort_t Chan);

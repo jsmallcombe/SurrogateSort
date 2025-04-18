@@ -35,7 +35,7 @@
 using namespace std;
 
 
-
+// Should move this to IO.cpp not hardcode
 int ModChanList[5]={8,32,32,32,16};
 
 double PhiOffset(double Phi){
@@ -91,14 +91,15 @@ int main(int argc, char *argv[]){
 	if(FileN)NextRun=Inputs.Entries[0];
 	
     #if defined(DEBUG)
-		#include "src/DebugHistList.h"
+		#include "sortcode/DebugHistList.h"
     #elif defined(CALIBRATE)
-		#include "src/CalHistList.h"
+		#include "sortcode/CalHistList.h"
     #else
-        #include "src/SortHistogramList.h"
+        #include "sortcode/DiceHistList.h"
+//         #include "sortcode/SortHistogramList.h"
     #endif
 
-	vector<DetHit> HPGe,SiERaw,SidERaw,Solar,LaBr;
+	vector<DetHit> HPGe,SiERaw,SidERaw,Solar,LaBr,DICE;
 	vector<TelescopeHit> SiHits;
 	vector<bool> IDGateTest(Inputs.CutGates.size(),false);
 	
@@ -130,6 +131,7 @@ int main(int argc, char *argv[]){
 		SidERaw.clear();
 		Solar.clear();
 		LaBr.clear();
+		DICE.clear();
 		SiHits.clear();
 
         UShort_t Nhit=tNum;
@@ -152,6 +154,9 @@ int main(int argc, char *argv[]){
 					break;
 				case DetHit::LaBr:
 					LaBr.push_back(hit);
+					break;
+				case DetHit::Dice:
+					DICE.push_back(hit);
 					break;
 				case DetHit::SiDeltaE:
 					SidERaw.push_back(hit);
@@ -176,11 +181,12 @@ int main(int argc, char *argv[]){
 		
 			
 		#if defined(DEBUG)
-			#include "src/DebugLoop.h"
+			#include "sortcode/DebugLoop.h"
 		#elif defined(CALIBRATE)
-			#include "src/CalLoop.h"
+			#include "sortcode/CalLoop.h"
 		#else
-			#include "src/MainSortLoop.h"
+			#include "sortcode/DiceSortLoop.h"
+// 			#include "sortcode/MainSortLoop.h"
 		#endif
 		
 
