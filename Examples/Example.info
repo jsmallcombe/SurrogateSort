@@ -3,3 +3,4 @@
 -o SiliconSortNew.root
 InitialCalFile.cal
 -ID gates/Alpha.root
+#-MirrorZ 0

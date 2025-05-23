@@ -1,4 +1,5 @@
-    TFile* FilterTreeFile=nullptr;
+   
+   TFile* FilterTreeFile=nullptr;
     TTree* FilterTree=nullptr;
     bool FillFilterTree=false;
    
@@ -61,7 +62,8 @@
     out.mkdir("Raw");
     out.cd("Raw");
 
-        TH2D* ChanE=new TH2D("ChanVsCharge","ChanVsCharge;Channel;Charge",totalchans,0,totalchans,1000,0,8000);
+        delete ChanE;
+        ChanE=new TH2D("ChanVsCharge","ChanVsCharge;Channel;Charge",totalchans,0,totalchans,1000,0,8000);
 
         TH2D* dEE[2]={
             new TH2D("Charge_E_dE_A","Charge_E_dE_A;Charge E;Charge dE",1000,0,8000,500,0,4000),

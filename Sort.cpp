@@ -27,13 +27,17 @@
  
  #include <detectors.h>
  #include <IO.h>
-
-#if defined(CALIBRATE)
+ 
+ 
+#ifdef JPHYS
 	#include "jphysmaster.h"
 #endif
 
+
 using namespace std;
 
+#define STR(x) #x
+#define INCLUDE_FILE(x) STR(x)
 
 
 int ModChanList[5]={8,32,32,32,16};
@@ -90,17 +94,17 @@ int main(int argc, char *argv[]){
 	long NextRun=0;
 	if(FileN)NextRun=Inputs.Entries[0];
 	
-    #if defined(DEBUG)
-		#include "src/DebugHistList.h"
-    #elif defined(CALIBRATE)
-		#include "src/CalHistList.h"
-    #else
-        #include "src/SortHistogramList.h"
-    #endif
+	
+// 	#include "sort_files/CalHistList.h"
+	#ifdef SORTFILE1
+		#include INCLUDE_FILE(SORTFILE1)
+	#endif
 
 	vector<DetHit> HPGe,SiERaw,SidERaw,Solar,LaBr;
 	vector<TelescopeHit> SiHits;
 	vector<bool> IDGateTest(Inputs.CutGates.size(),false);
+	
+	if(Inputs.TestInput("MirrorZ"))TelescopeHit::MirrorZ();
 	
 	cout<<endl;
 	
@@ -173,17 +177,13 @@ int main(int argc, char *argv[]){
 					break;
 			}
 		}
-		
 			
-		#if defined(DEBUG)
-			#include "src/DebugLoop.h"
-		#elif defined(CALIBRATE)
-			#include "src/CalLoop.h"
-		#else
-			#include "src/MainSortLoop.h"
+			
+// 		#include "sort_files/CalLoop.h"
+		#ifdef SORTFILE2
+			#include SORTFILE2
 		#endif
 		
-
 		if(jentry%10000==0){
 		cout<<setiosflags(ios::fixed)<<std::setprecision(2)<<100.*(double)jentry/nentries<<" % complete"<<"\r"<<flush;
 		}

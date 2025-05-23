@@ -100,6 +100,8 @@ class DetHit{
 
 class TelescopeHit{
     
+    friend class SurrogateSortIO;
+    
     private :
     DetHit fdEHit,fEHit;
     UShort_t ab;
@@ -130,6 +132,8 @@ class TelescopeHit{
 
     static TVector3 SiliconPosDet(UShort_t N_dE,UShort_t N_E,int AB,bool blur=false,bool intrinsic=false);
     
+    static void MirrorZ(){Z_Mirror=!Z_Mirror;}
+
     
     private :
     static double ActiveLength;
@@ -149,8 +153,8 @@ class TelescopeHit{
     static double dStrip, XZ_dE, XZ_E, OffsetY, OffsetXZ;
 
     // The default assumption is the XZ strip 0 is nearest the beam axis and Y strip 0 is nearest floor
-    static bool Invert_dEA, Invert_EA, Invert_dEB, Invert_EB;
-    
+    static bool Invert_dEA, Invert_EA, Invert_dEB, Invert_EB, Z_Mirror;
+    // Can be set with correct channel numbers
     
     
 };

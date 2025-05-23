@@ -96,8 +96,8 @@ double TelescopeHit::ActiveLength = 49.50;
 int TelescopeHit::segN = 16;
 
 // Distance in the XZ plane between the face of detector and origin
-double TelescopeHit::MagXZnorm_dE = 42.318;
-double TelescopeHit::MagXZnorm_E = 48.368;
+double TelescopeHit::MagXZnorm_dE = 39.776;
+double TelescopeHit::MagXZnorm_E = 46.006;
 
 // Distance between the origin facing PCB face and center/front of the silicon wafer
 double TelescopeHit::FaceOffset_dE = 2.2 - 0.05;
@@ -105,7 +105,7 @@ double TelescopeHit::FaceOffset_E = 2.2 - 0.5;
 
 // Distance along the detector face between the face center and origin normal vector, along the XZ plane
 // As the face normal vector origin is NOT in the center
-double TelescopeHit::FaceOriginOffsetXZ = 7.978;
+double TelescopeHit::FaceOriginOffsetXZ = -10.227;
 
 // Calculate the basic parameters
 double TelescopeHit::dStrip = TelescopeHit::ActiveLength / TelescopeHit::segN;
@@ -119,7 +119,9 @@ bool TelescopeHit::Invert_dEA = false;
 bool TelescopeHit::Invert_EA = false;
 bool TelescopeHit::Invert_dEB = false;
 bool TelescopeHit::Invert_EB = false;
+// Can be set with correct channel numbers
 
+bool TelescopeHit::Z_Mirror = false;
 
 int TelescopeHit::AB(const DetHit& hit){
     if(hit.Type()==DetHit::SiDeltaE_B||hit.Type()==DetHit::Si_B)return 1;
@@ -137,9 +139,11 @@ TVector3 TelescopeHit::SiliconDetectorPos(UShort_t N_dE,UShort_t N_E,bool Inv_dE
         N_E=segN-1-N_E;
     }
 
-    // Correct these 3 variables if dE/E strips are the other way to my assumptions
     // i is ZX plane positioning, j is Y positioning
+    // dE detectors are divided along the XZ plane
+    // E detectors are divided along the Y axis plane
     int i=N_dE;     int j=N_E;    double ZPrime=XZ_dE; double YScale=XZ_dE/XZ_E;
+//     // Opposite config :
 // //     int j=N_dE;int i=N_E;double ZPrime=XZ_E;double YScale=XZ_E/XZ_dE;
 
     if(i>=segN||j>=segN){return TVector3(0,0,0);}
@@ -159,9 +163,10 @@ TVector3 TelescopeHit::SiliconDetectorPos(UShort_t N_dE,UShort_t N_E,bool Inv_dE
 
     if(!intrinsic){
         //Rotate from the prime frame into the lab-frame
-        RetVec.RotateY(TMath::DegToRad()*-50);
+        RetVec.RotateY(TMath::DegToRad()*-55);
     }
 
+    if(Z_Mirror) RetVec=TVector3(RetVec.X(),RetVec.Y(),-RetVec.Z());
     return RetVec;
 }
 

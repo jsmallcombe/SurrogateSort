@@ -175,9 +175,7 @@ void SurrogateSortIO::ProcessInputs(){
                 }else{//Doesnt exist, must be the output
                     OutFilename=str;
                 }
-            }
-        }else if(str.find("Mode")<str.size()){
-            // Set the program mode i.e. sort or calibrat            
+            }           
         }else if(str[0]=='-'){
             // A special argument, read the next item out of order of normal processing loop
             

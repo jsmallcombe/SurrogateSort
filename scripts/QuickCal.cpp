@@ -1,9 +1,8 @@
+// g++ `root-config --cflags` -o bin/SurrogateCal scripts/QuickCal.cpp -I. -I./include `root-config --glibs` -L./bin -lSurrogateSort 
+
 #include <TApplication.h>
 #include <TInterpreter.h>
 #include <TSystem.h>
-
-
-// #include <TSystem.h>
 #include <TROOT.h>
  #include <TFile.h>
  #include <TH1.h>
@@ -25,8 +24,8 @@
  #include <vector>
  #include <sstream>
  
- #include <detectors.h>
- #include <IO.h>
+ #include "detectors.h"
+ #include "IO.h"
 
 
 using namespace std;
