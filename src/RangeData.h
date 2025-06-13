@@ -1,90 +1,362 @@
- 
-    
-    double target_thickness_ug_cm2=145.5;
-    double target_density_g_cm3=11.68;
+// //  The splines are slightly faster and more accurate, but causes edge case misbehaviour
+// #define NOSPLINES
+
+    double target_thickness_ug_cm2=158.2;//Jan2025
+    double target_density_g_cm3=11.68; //AmO2
     double target_um=1E-2*target_thickness_ug_cm2/target_density_g_cm3;
-    double target_half_um=target_um/2;
+    double AmHalf_um=target_um/2;
     
-    double AlBacking_um=1.0;
+    double beam_energy_MeV=30; 
+    if(Inputs.TestInput("BeamEnergy")){
+        beam_energy_MeV=Inputs.GetInput("BeamEnergy");
+    }
+    
+    double TargetZoffset=0; 
+    if(Inputs.TestInput("ZOffset")){
+        TargetZoffset=Inputs.GetInput("ZOffset");
+    }
+    
+    double AlBacking_um=1.99;
+    if(Inputs.TestInput("Backing_Thickness_um")){
+        AlBacking_um=Inputs.GetInput("Backing_Thickness_um");
+    }
     double AlBacking_half_um=AlBacking_um*0.5;
     
-    double dE_Thickness_um=106; //adjusted from official 111 because that works
+    double E_Thickness_um=1000; 
+    
+    double dE_Thickness_um=111; 
+    if(Inputs.TestInput("dE_Thickness_um")){
+        dE_Thickness_um=Inputs.GetInput("dE_Thickness_um");
+    }
+    
     double dE_FrontDead_um=0.5065;
     double dE_BackDead_um=dE_FrontDead_um;
+    if(Inputs.TestInput("dE_BackDead_um")){
+        dE_BackDead_um=Inputs.GetInput("dE_BackDead_um");
+    }
+    
     double E_Dead_um=0.545;
 
-    double TotalDead=dE_BackDead_um+dE_FrontDead_um+E_Dead_um;
-    double TotalDeadTodERatio=1-(TotalDead/(dE_Thickness_um+E_Dead_um));
+    if(Inputs.TestInput("AllDead_um")){
+        dE_FrontDead_um=Inputs.GetInput("AllDead_um");
+        dE_BackDead_um=dE_FrontDead_um;
+        E_Dead_um=dE_FrontDead_um;
+    }   
     
+   double dEActive_um=dE_Thickness_um-dE_FrontDead_um-dE_BackDead_um;
     
-   Double_t RangeAl_fx2[50] = { 0.55, 0.6, 0.65, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2, 2.25,  2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 5.5, 6, 6.5, 7, 8, 9, 10,  11, 12, 13, 14, 15, 16, 17, 18, 20, 22.5, 25, 27.5, 30, 32.5, 35, 37.5,  40 };
-   Double_t RangeAl_fy2[50] = { 1.8, 1.94, 2.08, 2.22, 2.52, 2.82, 3.14, 3.46, 3.8, 4.14, 4.5, 4.87, 5.25, 5.64, 6.04, 6.88, 7.99,  9.16, 10.41, 11.71, 13.09, 14.52, 16.02, 17.58, 20.88, 24.43, 28.2, 32.2, 36.43, 40.89, 50.53, 61.09, 72.53,  84.84, 97.99, 111.98, 126.79, 142.41, 158.83, 176.04, 194.02, 232.29, 284.35, 341.06, 402.3, 468.02, 538.12, 612.56, 691.26,  774.18 };
-   TGraph *He3_RangeAlBacking_umMeV = new TGraph(50,RangeAl_fx2,RangeAl_fy2);
-   TGraph *He3_EnergyAlBacking_MeVum = new TGraph(50,RangeAl_fy2,RangeAl_fx2);
+   out.mkdir("Ranges");   
+   gROOT->cd();
    
-   Double_t Graph_fx6[50] = { 0.55, 0.6, 0.65, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2, 2.25,  2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 5.5, 6, 6.5, 7, 8, 9, 10,  11, 12, 13, 14, 15, 16, 17, 18, 20, 22.5, 25, 27.5, 30, 32.5, 35, 37.5,  40 };
-   Double_t Graph_fy6[50] = { 0.984, 1.05, 1.13, 1.2, 1.34, 1.5, 1.65, 1.82, 1.99, 2.16, 2.34, 2.53, 2.72, 2.92, 3.12, 3.55, 4.11,  4.71, 5.34, 5.99, 6.68, 7.4, 8.14, 8.92, 10.54, 12.27, 14.1, 16.03, 18.05, 20.15, 24.63, 29.47, 34.65,   40.16, 45.99, 52.14, 58.61, 65.38, 72.44, 79.81, 87.46, 103.61, 125.36, 148.81, 173.9, 200.62, 228.91, 258.75, 290.12,  322.99 };
-   TGraph *He3_RangeTarget_umMeV = new TGraph(50,Graph_fx6,Graph_fy6);
-   TGraph *He3_EnergyTarget_MeVum = new TGraph(50,Graph_fy6,Graph_fx6);
+   TGraph *Range_umMeV,*Energy_MeVum;
    
-   Double_t Graph_fx4[50] = { 0.55, 0.6, 0.65, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2, 2.25,  2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 5.5, 6, 6.5, 7, 8, 9, 10,  11, 12, 13, 14, 15, 16, 17, 18, 20, 22.5, 25, 27.5, 30, 32.5, 35, 37.5,
-   40 };
-   Double_t Graph_fy4[50] = { 1.98, 2.14, 2.29, 2.45, 2.78, 3.12, 3.47, 3.83, 4.21, 4.6, 5.01, 5.43, 5.86, 6.31, 6.77, 7.73, 9,  10.35, 11.78, 13.29, 14.87, 16.53, 18.25, 20.05, 23.86, 27.93, 32.27, 36.87, 41.72, 46.83, 57.86, 69.94, 83.01,  97.07, 112.08, 128.04, 144.93, 162.73, 181.44, 201.04, 221.52, 265.08, 324.32, 388.8, 458.42, 533.09, 612.73, 697.26, 786.62,  880.74 };
-   TGraph *He3_SRIM_RangeSilicon_umMeV = new TGraph(50,Graph_fx4,Graph_fy4);
-   TGraph *He3_SRIM_EnergySilicon_MeVum = new TGraph(50,Graph_fy4,Graph_fx4);   
+  // Protons in Silicon
+  Double_t H1SiEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			     1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			     3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			     7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			     17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t H1SiRanmum[51] = {5.97,  6.83,  7.72,  8.66,  9.64,  11.70, 13.92, 16.28, 18.77, 21.41,
+			     24.20, 27.13, 30.19, 33.39, 36.73, 40.20, 47.53, 57.42, 68.09, 79.54,
+			     91.74, 104.68,118.36,132.76,147.87,180.17,215.21,252.95,293.33,336.32,
+			     381.86,480.39,588.80,706.85,834.36,971.15,1120., 1270., 1440., 1610.,
+			     1790., 1980., 2380., 2940., 3540., 4190., 4890., 5640., 6480., 7270.,8160.};
+  TGraph *H1_SRIM_RangeSilicon_umMeV = new TGraph(51,H1SiEneMeV,H1SiRanmum);
 
-Double_t Graph_fx2as[51] = { 1.82676, 1.9766, 2.12685, 2.2978, 2.45095, 2.78151, 3.12922, 3.48483, 3.84823, 4.23073, 4.62179, 5.0227, 5.43776, 5.86571, 6.30214, 6.75705, 7.69672,  8.94899, 10.2555, 11.6469, 13.0932, 14.6291, 16.2262, 17.892, 19.6387, 23.3384, 27.3212, 31.5838, 36.1217, 40.9316, 46.0187, 57.048, 69.2351,  82.3711, 96.4975, 111.601, 127.611, 144.591, 162.507, 181.313, 200.993, 221.603, 265.448, 325.031, 389.909, 459.965, 535.219, 615.23, 700.109,  789.857, 884.464 };
-   Double_t Graph_fy2as[51] = { 0.5, 0.55, 0.6, 0.65, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2,  2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 5.5, 6, 6.5, 7, 8, 9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 22.5, 25, 27.5, 30, 32.5, 35,  37.5, 40 };
-   TGraph *He3_ASTAR_EnergySilicon_MeVum = new TGraph(51,Graph_fx2as,Graph_fy2as);  
-   TGraph *He3_ASTAR_RangeSilicon_umMeV = new TGraph(51,Graph_fy2as,Graph_fx2as);
-   //NIST ASTAR DATA, Mass adjusted based on SRIM
-   
-   TGraph *He3_EnergySilicon_MeVum = He3_ASTAR_EnergySilicon_MeVum;  
-   TGraph *He3_RangeSilicon_umMeV = He3_ASTAR_RangeSilicon_umMeV;
+#ifdef NOSPLINES
+   TGraph *ProtonsSilicon_Range_umMeV = new TGraph(51,H1SiEneMeV,H1SiRanmum);
+   TGraph *ProtonsSilicon_Energy_MeVum = new TGraph(51,H1SiRanmum,H1SiEneMeV);  
+#else
+   Range_umMeV = new TGraph(51,H1SiEneMeV,H1SiRanmum);
+   Energy_MeVum = new TGraph(51,H1SiRanmum,H1SiEneMeV);  
+   TSpline3 *ProtonsSilicon_Range_umMeV = new TSpline3("ProtonsSilicon_Range_umMeV",Range_umMeV);  
+   TSpline3 *ProtonsSilicon_Energy_MeVum = new TSpline3("ProtonsSilicon_Energy_MeVum",Energy_MeVum);  
+   out.cd("Ranges");
+      Range_umMeV->Write("ProtonsSilicon_Range_umMeV");
+      Energy_MeVum->Write("ProtonsSilicon_Energy_MeVum");
+   gROOT->cd();
+#endif  
+  // Deuterons in Si
+  Double_t H2SiEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			     1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			     3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			     7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			     17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t H2SiRanmum[51] = {4.86,  5.47,  6.10,  6.76,  7.45,  8.89,  10.43, 12.06, 13.77, 15.57,
+			     17.45, 19.42, 21.45, 23.57, 25.76, 28.02, 32.75, 39.06, 45.81, 53.02,
+			     60.67, 68.74, 77.24, 86.14, 95.46, 115.30,136.71,159.67,184.15,210.11,
+			     237.55,296.68,361.46,431.75,507.43,588.41,674.61,765.94,862.33,963.72,
+			     1070., 1180., 1420., 1740., 2090., 2470., 2880., 3310., 3780., 4270.,4780.};
+  TGraph *H2_SRIM_RangeSilicon_umMeV = new TGraph(51,H2SiEneMeV,H2SiRanmum);
 
+  // Tritons in Si
+  Double_t H3SiEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			     1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			     3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			     7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			     17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t H3SiRanmum[51] = {4.59,  5.10,  5.63,  6.19,  6.76,  7.95,  9.22,  10.55, 11.95, 13.41,
+			     14.94, 16.53, 18.17, 19.88, 21.64, 23.46, 27.25, 32.29, 37.65, 43.32,
+			     49.28, 55.52, 62.06, 68.91, 76.06, 91.24, 107.55,124.99,143.53,163.14,
+			     183.82,228.27,276.80,329.31,385.73,445.98,509.98,577.70,649.06,724.02,
+			     802.55,884.59,1060., 1300., 1550., 1830., 2130., 2450., 2790., 3140.,3520.};
+  TGraph *H3_SRIM_RangeSilicon_umMeV = new TGraph(51,H3SiEneMeV,H3SiRanmum);
+
+
+  // He-3 in Si
+  Double_t He3SiEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			      1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			      3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			      7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			      17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t He3SiRanmum[51] = {1.83,  1.98,  2.13,  2.29,  2.44,  2.77,  3.11,  3.46,  3.82,  4.20,
+			      4.59,  4.99,  5.41,  5.84,  6.28,  6.74,  7.69,  8.96,  10.30, 11.73,
+			      13.22, 14.80, 16.44, 18.16, 19.95, 23.73, 27.78, 32.09, 36.66, 41.48,
+			      46.56, 57.52, 69.52, 82.51, 96.47, 111.39,127.24,144.02,161.71,180.29,
+			      199.76,220.11,263.38,322.23,386.29,455.45,529.62,608.73,692.69,781.45,874.94};
+  TGraph *He3_SRIM_RangeSilicon_umMeV = new TGraph(51,He3SiEneMeV,He3SiRanmum);
+ 
+#ifdef NOSPLINES
+   TGraph *RangeSi_umMeV = new TGraph(51,He3SiEneMeV,He3SiRanmum);
+   TGraph *EnergySi_MeVum = new TGraph(51,He3SiRanmum,He3SiEneMeV);
+#else
+   Range_umMeV = new TGraph(51,He3SiEneMeV,He3SiRanmum);
+   Energy_MeVum = new TGraph(51,He3SiRanmum,He3SiEneMeV);  
+   TSpline3 *RangeSi_umMeV = new TSpline3("RangeSi_umMeV",Range_umMeV);  
+   TSpline3 *EnergySi_MeVum = new TSpline3("EnergySi_MeVum",Energy_MeVum);  
    
-   Double_t Graph_fx1p[61] = { 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.1, 1.2, 1.25, 1.3, 1.4, 1.5,  1.6, 1.7, 1.75, 1.8, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 5.5,   6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 11, 12, 12.5, 13, 14, 15, 16,  17, 17.5, 18, 20, 22.5, 25, 27.5, 30, 32.5, 35, 37.5, 40 };
-   Double_t Graph_fy1p[61] = { 5.96393, 6.80979, 7.69429, 8.61743, 9.57922, 10.5754, 11.6144, 12.6921, 13.8128, 14.9721, 16.1657, 18.669, 21.3225, 22.705, 24.1219, 27.0588, 30.1417,  33.3577, 36.711, 38.4414, 40.2018, 47.5741, 57.5354, 68.2696, 79.7767, 92.0567, 105.109, 118.892, 133.362, 148.605, 181.151, 216.445, 254.444,  295.105, 338.386, 384.242, 432.804, 483.469, 536.711, 592.529, 650.923, 711.464, 839.845, 977.243, 1049.81, 1124.09, 1279.95, 1444.83, 1618.29,  1800.34, 1894.8, 1990.98, 2398.02, 2953.2, 3559.04, 4214.26, 4916.27, 5671.96, 6470.59, 7312.15, 8205.24 };
-   TGraph *H1_RangeSilicon_umMeV = new TGraph(61,Graph_fx1p,Graph_fy1p);
-   TGraph *H1_EnergySilicon_MeVum = new TGraph(61,Graph_fy1p,Graph_fx1p);
-   //NIST PSTAR Projected Range DATA 
+   out.cd("Ranges");
+      Range_umMeV->Write("GRangeSi_umMeV");
+      Energy_MeVum->Write("GEnergySi_MeVum");
+   gROOT->cd();
+#endif   
+
+  // He-4 in Si
+  Double_t He4SiEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			      1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			      3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			      7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			      17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t He4SiRanmum[51] = {1.97,  2.12,  2.27,  2.41,  2.56,  2.87,  3.18,  3.50,  3.83,  4.17,
+			      4.52,  4.88,  5.25,  5.63,  6.02,  6.42,  7.25,  8.34,  9.50,  10.72,
+			      12.00, 13.34, 14.73, 16.19, 17.70, 20.89, 24.30, 27.92, 31.75, 35.78,
+			      40.01, 49.05, 58.85, 69.46, 80.88, 93.05, 105.97,119.62,134.00,149.10,
+			      164.90,181.39,216.43,264.02,315.74,371.52,431.29,494.97,562.50,633.85,708.95};
+  TGraph *He4_SRIM_RangeSilicon_umMeV = new TGraph(51,He4SiEneMeV,He4SiRanmum);
+ 
+#ifdef NOSPLINES
+   TGraph *AlphaSilicon_Range_umMeV = new TGraph(51,He4SiEneMeV,He4SiRanmum);
+   TGraph *AlphaSilicon_Energy_MeVum = new TGraph(51,He4SiRanmum,He4SiEneMeV); 
+#else
+   Range_umMeV = new TGraph(51,He4SiEneMeV,He4SiRanmum);
+   Energy_MeVum = new TGraph(51,He4SiRanmum,He4SiEneMeV);  
+   TSpline3 *AlphaSilicon_Range_umMeV = new TSpline3("AlphaSilicon_Range_umMeV",Range_umMeV);  
+   TSpline3 *AlphaSilicon_Energy_MeVum = new TSpline3("AlphaSilicon_Energy_MeVum",Energy_MeVum);    
+   out.cd("Ranges");
+      Range_umMeV->Write("AlphaSilicon_Range_umMeV");
+      Energy_MeVum->Write("AlphaSilicon_Energy_MeVum");
+   gROOT->cd();
+#endif   
    
-    Double_t SiAlphaX[61] = { 1.96651, 2.11636, 2.26664, 2.41821, 2.57149, 2.72563, 2.88192, 3.03993, 3.19966, 3.36153, 3.52512, 3.85831, 4.20052, 4.37527, 4.55131, 4.91198, 5.27694,
-   5.65479, 6.04122, 6.23873, 6.43624, 7.25633, 8.32976, 9.459, 10.6441, 11.8849, 13.1859, 14.5384, 15.9511, 17.4238, 20.5453, 23.8987, 27.4796,
-   31.2838, 35.307, 39.5449, 44.0103, 48.6475, 53.5423, 58.6088, 63.8901, 69.3431, 80.8931, 93.216, 99.6565, 106.269, 120.094, 134.65, 149.936,
-   165.908, 174.195, 182.611, 218.119, 266.295, 318.678, 375.182, 435.809, 500.215, 568.484, 640.618, 716.617 };
-   Double_t SiAlphaY[61] = { 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.1, 1.2, 1.25, 1.3, 1.4, 1.5,
-   1.6, 1.7, 1.75, 1.8, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 5.5,
-   6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 11, 12, 12.5, 13, 14, 15, 16,
-   17, 17.5, 18, 20, 22.5, 25, 27.5, 30, 32.5, 35, 37.5, 40 };
-   TGraph *ASTAR_4He_Silicon_Energy_MeV_um = new TGraph(61,SiAlphaX,SiAlphaY);
-   TGraph *ASTAR_4He_Silicon_Range_um_MeV = new TGraph(61,SiAlphaY,SiAlphaX);
+
+  // Protons in Aluminium
+  Double_t H1AlEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			     1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			     3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			     7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			     17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t H1AlRanmum[51] = {5.42,  6.17,  6.96,  7.78,  8.63,  10.43, 12.35, 14.40, 16.56, 18.86,
+			     21.28, 23.84, 26.51, 29.31, 32.23, 35.26, 41.68, 50.35, 59.71, 69.76,
+			     80.48, 91.87, 103.90,116.57,129.87,158.33,189.22,222.50,258.13,296.07,
+			     336.28,423.32,519.12,623.50,736.29,857.33,986.50,1120., 1270., 1420.,
+			     1580., 1750., 2110., 2600., 3130., 3710., 4330., 5000., 5700., 6450.,7230.};
+  TGraph *H1_SRIM_RangeAlBacking_umMeV = new TGraph(51,H1AlEneMeV,H1AlRanmum);
+
+  // Deuterons in Aluminium
+  Double_t H2AlEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			     1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			     3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			     7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			     17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t H2AlRanmum[51] = {4.57,  5.11,  5.68,  6.27,  6.88,  8.16,  9.52,  10.95, 12.46, 14.03,
+			     15.68, 17.39, 19.16, 21.00, 22.91, 24.87, 28.97, 34.44, 40.32, 46.60,
+			     53.27, 60.32, 67.75, 75.54, 83.70, 101.08,119.86,140.01,161.52,184.34,
+			     208.47,260.51,317.56,379.49,446.22,517.65,593.71,674.33,759.44,848.98,
+			     942.91,1040., 1250., 1540.,1850., 2180., 2540., 2930., 3340., 3770., 4230., };
+  TGraph *H2_SRIM_RangeAlBacking_umMeV = new TGraph(51,H2AlEneMeV,H2AlRanmum);
+
+  // Tritons in Aluminium
+  Double_t H3AlEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			     1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			     3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			     7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			     17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t H3AlRanmum[51] = {4.40,  4.87,  5.36,  5.86,  6.37,  7.45,  8.58,  9.77,  11.01, 12.31,
+			     13.66, 15.06, 16.50, 18.00, 19.55, 21.14, 24.45, 28.85, 33.51, 38.43,
+			     43.59, 49.00, 54.68, 60.64, 66.88, 80.11, 94.36, 109.61,125.83,143.02,
+			     161.15,200.15,242.77,288.94,338.56,391.59,447.95,507.60,570.48,636.57,
+			     705.81,778.17,932.06,1140., 1370., 1620., 1880., 2160., 2460., 2780.,3110.};
+  TGraph *H3_SRIM_RangeAlBacking_umMeV = new TGraph(51,H3AlEneMeV,H3AlRanmum);
+
+  // He3 in Aluminium
+  Double_t He3AlEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			      1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			      3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			      7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			      17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t He3AlRanmum[51] = {1.66,  1.80,  1.94,  2.08,  2.23,  2.52,  2.82,  3.14,  3.46,  3.80,
+			      4.15,  4.50,  4.87,  5.25,  5.64,  6.04,  6.88,  7.99,  9.16,  10.40,
+			      11.71, 13.08, 14.51, 16.01, 17.57, 20.87, 24.40, 28.17, 32.17, 36.39,
+			      40.84, 50.46, 61.00, 72.41, 84.70, 97.83, 111.79,126.57,142.15,158.54,
+			      175.71,193.66,231.84,283.79,340.37,401.49,467.05,537.00,611.27,689.80,772.54};
+  TGraph *He3_SRIM_RangeAlBacking_umMeV = new TGraph(51,He3AlEneMeV,He3AlRanmum);
+  
+#ifdef NOSPLINES
+   TGraph *RangeAl_umMeV = new TGraph(51,He3AlEneMeV,He3AlRanmum);
+   TGraph *EnergyAl_MeVum = new TGraph(51,He3AlRanmum,He3AlEneMeV);
+#else
+   Range_umMeV = new TGraph(51,He3AlEneMeV,He3AlRanmum);
+   Energy_MeVum = new TGraph(51,He3AlRanmum,He3AlEneMeV);  
+   TSpline3 *RangeAl_umMeV = new TSpline3("RangeAl_umMeV",Range_umMeV);  
+   TSpline3 *EnergyAl_MeVum = new TSpline3("EnergyAl_MeVum",Energy_MeVum);      
+   out.cd("Ranges");
+      Range_umMeV->Write("RangeAl_umMeV");
+      Energy_MeVum->Write("EnergyAl_MeVum");
+   gROOT->cd();
+#endif  
+
+  // He4 in Aluminium
+  Double_t He4AlEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+			      1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+			      3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+			      7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+			      17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t He4AlRanmum[51] = {1.78,  1.91,  2.05,  2.19,  2.33,  2.61,  2.89,  3.18,  3.48,  3.79,
+			      4.10,  4.42,  4.75,  5.09,  5.44,  5.79,  6.53,  7.49,  8.51,  9.57,
+			      10.69, 11.86, 13.08, 14.35, 15.67, 18.45, 21.42, 24.58, 27.92, 31.44,
+			      35.13, 43.04, 51.62, 60.93, 70.95, 81.64, 92.99, 105.00,117.65,130.94,
+			      144.85,159.38,190.26,232.21,277.84,327.07,379.84,436.08,495.75,558.81,625.20};
+  TGraph *He4_SRIM_RangeAlBacking_umMeV = new TGraph(51,He4AlEneMeV,He4AlRanmum);
+ 
+#ifdef NOSPLINES
+   TGraph *AlphaAluminium_Range_umMeV = new TGraph(51,He4AlEneMeV,He4AlRanmum);
+   TGraph *AlphaAluminium_Energy_MeVum = new TGraph(51,He4AlRanmum,He4AlEneMeV); 
+#else
+   Range_umMeV = new TGraph(51,He4AlEneMeV,He4AlRanmum);
+   Energy_MeVum = new TGraph(51,He4AlRanmum,He4AlEneMeV);  
+   TSpline3 *AlphaAluminium_Range_umMeV = new TSpline3("AlphaAluminium_Range_umMeV",Range_umMeV);  
+   TSpline3 *AlphaAluminium_Energy_MeVum = new TSpline3("AlphaAluminium_Energy_MeVum",Energy_MeVum);   
+   out.cd("Ranges");
+      Range_umMeV->Write("AlphaAluminium_Range_umMeV");
+      Energy_MeVum->Write("AlphaAluminium_Energy_MeVum");
+   gROOT->cd();
+#endif   
+   
+  // Proton in AmO2
+  Double_t H1TargetEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+				 1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+				 3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+				 7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+				 17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t H1TargetRanmum[51] = {2.94,  3.36,  3.80,  4.26,  4.74,  5.77,  6.87,  8.04,  9.27,  10.56,
+				 11.89, 13.28, 14.72, 16.21, 17.75, 19.34, 22.66, 27.08, 31.79, 36.77,
+				 42.03, 47.56, 53.35, 59.39, 65.68, 79.00, 93.27, 108.47,124.58,141.57,
+				 159.43,197.66,239.19,283.93,331.79,382.70,436.59,493.42,553.12,615.65,
+				 680.97,749.04,893.21,1090., 1300., 1530., 1770., 2020., 2300., 2580., 2880.};
+  TGraph *H1_SRIM_RangeTarget_umMeV = new TGraph(51,H1TargetEneMeV,H1TargetRanmum);
+
+  // Deuterons in AmO2
+  Double_t H2TargetEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+				 1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+				 3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+				 7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+				 17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t H2TargetRanmum[51] = {2.60,  2.89,  3.20,  3.52,  3.86,  4.57,  5.34,  6.15,  7.01,  7.91,
+				 8.86,  9.85,  10.88, 11.95, 13.06, 14.20, 16.61, 19.78, 23.12, 26.62,
+				 30.28, 34.10, 38.07, 42.21, 46.49, 55.50, 65.10, 75.26, 85.97, 97.22,
+				 109.00,134.08,161.16,190.17,221.05,253.77,288.27,324.52,362.50,402.17,
+				 443.50,486.46,577.20,699.43,831.24,972.38,1120., 1280., 1450., 1630., 1810.};
+  TGraph *H2_SRIM_RangeTarget_umMeV = new TGraph(51,H2TargetEneMeV,H2TargetRanmum);
+
+  // Tritons in AmO2
+  Double_t H3TargetEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+				 1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+				 3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+				 7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+				 17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t H3TargetRanmum[51] = {2.66,  2.91,  3.18,  3.54,  3.73,  4.32,  4.94,  5.60,  6.30,  7.03,
+				 7.79,  8.59,  9.42,  10.28, 11.18, 12.10, 14.03, 16.60, 19.33, 22.23,
+				 25.28, 28.46, 31.74, 35.14, 38.64, 45.98, 53.74, 61.92, 70.51, 79.50,
+				 88.88, 108.79,130.19,153.04,177.29,202.91,229.86,258.11,287.64,318.43,
+				 350.46,383.70,453.73,547.80,648.96,757.01,871.81,993.19,1120., 1260., 1400.};
+  TGraph *H3_SRIM_RangeTarget_umMeV = new TGraph(51,H3TargetEneMeV,H3TargetRanmum);
+
+  // He3 in AmO2
+  Double_t He3TargetEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+				  1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+				  3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+				  7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+				  17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t He3TargetRanmum[51] = {0.9149,0.9853,1.06,  1.13,  1.20,  1.35,  1.50,  1.65,  1.82,  1.99,
+				  2.16,  2.34,  2.53,  2.72,  2.92,  3.12,  3.55,  4.11,  4.70,  5.33,
+				  5.99,  6.67,  7.39,  8.13,  8.90,  10.52, 12.25, 14.07, 16.00, 18.01,
+				  20.11, 24.58, 29.40, 34.57, 40.60, 45.88, 52.02, 58.46, 65.21, 72.26,
+				  79.60, 87.23, 103.34,125.03,148.41,173.43,200.06,228.27,258.03,289.30,322.07};
+  TGraph *He3_SRIM_RangeTarget_umMeV = new TGraph(51,He3TargetEneMeV,He3TargetRanmum);
+  
+#ifdef NOSPLINES
+   TGraph *RangeAm_umMeV = new TGraph(51,He3TargetEneMeV,He3TargetRanmum);
+   TGraph *EnergyAm_MeVum = new TGraph(51,He3TargetRanmum,He3TargetEneMeV);
+#else
+   Range_umMeV = new TGraph(51,He3TargetEneMeV,He3TargetRanmum);
+   Energy_MeVum = new TGraph(51,He3TargetRanmum,He3TargetEneMeV);  
+   TSpline3 *RangeAm_umMeV = new TSpline3("RangeAm_umMeV",Range_umMeV);  
+   TSpline3 *EnergyAm_MeVum = new TSpline3("EnergyAm_MeVum",Energy_MeVum);    
+   out.cd("Ranges");
+      Range_umMeV->Write("RangeAm_umMeV");
+      Energy_MeVum->Write("EnergyAm_MeVum");
+   gROOT->cd();
+#endif  
    
    
-   Double_t AlAlphaX[52] = { 0.5606958, 0.6528497, 0.7398224, 0.8223538, 0.9022946, 0.9800148, 1.056255, 1.131014, 1.205033, 1.350111, 1.492968, 1.634715, 1.775722, 1.916728, 2.057735, 2.199112, 2.341229,
-   2.484086, 2.628053, 2.773131, 2.919689, 3.067728, 3.216876, 3.985936, 4.803849, 5.666173, 6.57661, 7.535159, 8.541821, 9.592894, 10.69578, 13.03849, 15.57735,
-   18.32346, 21.27313, 24.42635, 27.77202, 31.31754, 35.04811, 38.97113, 43.0792, 47.37232, 51.85048, 56.47668, 61.28793, 88.00888, 118.8749, 153.775, 192.5241,
-   281.3101, 331.1621, 384.53 };
-   Double_t AlAlphaY[52] = { 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7,
-   0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5, 4,
-   4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 12.5, 15, 17.5, 20,
-   25, 27.5, 30 };
-   TGraph *ASTAR_4He_Aluminium_Energy_MeV_um = new TGraph(52,AlAlphaX,AlAlphaY);
-   TGraph *ASTAR_4He_Aluminium_Range_um_MeV = new TGraph(52,AlAlphaY,AlAlphaX);
-   
-   
-   Double_t AlphaAmOX[47] = { 1.01, 1.08, 1.15, 1.23, 1.3, 1.44, 1.58, 1.73, 1.88, 2.03, 2.19, 2.35, 2.52, 2.69, 2.87, 3.05, 3.42,
-   3.91, 4.43, 4.97, 5.54, 6.14, 6.75, 7.4, 8.06, 9.46, 10.94, 12.5, 14.15, 15.87, 17.67, 21.49, 25.58,
-   29.94, 34.57, 39.46, 44.61, 50.02, 55.67, 61.56, 67.69, 74.05, 87.47, 105.49, 124.89, 145.61, 167.64 };
-   Double_t AlphaAmOY[47] = { 0.5, 0.55, 0.6, 0.65, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2,
-   2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 5.5, 6, 6.5, 7, 8, 9,
-   10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 22.5, 25, 27.5, 30 };
-   TGraph *SRIM_4He_Am02_Energy_MeV_um = new TGraph(47,AlphaAmOX,AlphaAmOY);
-   TGraph *SRIM_4He_Am02_Range_um_MeV = new TGraph(47,AlphaAmOY,AlphaAmOX);
-    
-    TGraph* He4_EnergySilicon_MeVum = ASTAR_4He_Silicon_Energy_MeV_um;
-    TGraph *He4_RangeSilicon_umMeV = ASTAR_4He_Silicon_Range_um_MeV;
-    TGraph* He4_EnergyTarget_MeVum = SRIM_4He_Am02_Energy_MeV_um;
-    TGraph *He4_RangeTarget_umMeV = SRIM_4He_Am02_Range_um_MeV;
-    TGraph* He4_EnergyAlBacking_MeVum = ASTAR_4He_Aluminium_Energy_MeV_um;
-    TGraph *He4_RangeAlBacking_umMeV = ASTAR_4He_Aluminium_Range_um_MeV;
+  // He4 in AmO2
+  Double_t He4TargetEneMeV[51] = {0.50,  0.55,  0.60,  0.65,  0.70,  0.80,  0.90,  1.00,  1.10,  1.20,
+				  1.30,  1.40,  1.50,  1.60,  1.70,  1.80,  2.00,  2.25,  2.50,  2.75,
+				  3.00,  3.25,  3.50,  3.75,  4.00,  4.50,  5.00,  5.50,  6.00,  6.50,
+				  7.00,  8.00,  9.00,  10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00,
+				  17.00, 18.00, 20.00, 22.50, 25.00, 27.50, 30.00, 32.50, 35.00, 37.50,40.00};
+  Double_t He4TargetRanmum[51] = {1.01,  1.08,  1.15,  1.23,  1.30,  1.44,  1.58,  1.73,  1.88,  2.03,
+				  2.19,  2.35,  2.52,  2.69,  2.87,  3.05,  3.42,  3.91,  4.43,  4.97,
+				  5.54,  6.14,  6.75,  7.40,  8.06,  9.46,  10.94, 12.50, 14.15, 15.87,
+				  17.67, 21.49, 25.58, 29.94, 34.57, 39.46, 44.62, 50.02, 55.67, 61.56,
+				  67.69, 74.06, 84.47, 105.50,124.90,145.62,167.65,190.95,215.49,241.26,268.24};
+  TGraph *He4_SRIM_RangeTarget_umMeV = new TGraph(51,He4TargetEneMeV,He4TargetRanmum);
+ 
+#ifdef NOSPLINES
+   TGraph *AlphaTarget_Range_umMeV = new TGraph(51,He4TargetEneMeV,He4TargetRanmum);
+   TGraph *AlphaTarget_Energy_MeVum = new TGraph(51,He4TargetRanmum,He4TargetEneMeV); 
+#else
+   Range_umMeV = new TGraph(51,He4TargetEneMeV,He4TargetRanmum);
+   Energy_MeVum = new TGraph(51,He4TargetRanmum,He4TargetEneMeV);  
+   TSpline3 *AlphaTarget_Range_umMeV = new TSpline3("AlphaTarget_Range_umMeV",Range_umMeV);  
+   TSpline3 *AlphaTarget_Energy_MeVum = new TSpline3("AlphaTarget_Energy_MeVum",Energy_MeVum);  
+   out.cd("Ranges");
+      Range_umMeV->Write("AlphaTarget_Range_umMeV");
+      Energy_MeVum->Write("AlphaTarget_Energy_MeVum");
+   gROOT->cd();
+#endif  
+
+int i_Si=0,i_Al=1,i_Am0=2;
+  
+#ifdef NOSPLINES
+vector<vector<TGraph*>> Range_um ={{RangeSi_umMeV,RangeAl_umMeV,RangeAm_umMeV},
+                                          {AlphaSilicon_Range_umMeV,AlphaAluminium_Range_umMeV,AlphaTarget_Range_umMeV}};
+vector<vector<TGraph*>> Energy_MeV ={{EnergySi_MeVum,EnergyAl_MeVum,EnergyAm_MeVum},
+                                          {AlphaSilicon_Energy_MeVum,AlphaAluminium_Energy_MeVum,AlphaTarget_Energy_MeVum}};
+#else
+
+vector<vector<TSpline3*>> Range_um ={{RangeSi_umMeV,RangeAl_umMeV,RangeAm_umMeV},
+                                          {AlphaSilicon_Range_umMeV,AlphaAluminium_Range_umMeV,AlphaTarget_Range_umMeV}};
+vector<vector<TSpline3*>> Energy_MeV ={{EnergySi_MeVum,EnergyAl_MeVum,EnergyAm_MeVum},
+                                          {AlphaSilicon_Energy_MeVum,AlphaAluminium_Energy_MeVum,AlphaTarget_Energy_MeVum}};
+#endif  

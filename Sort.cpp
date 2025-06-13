@@ -16,6 +16,7 @@
  #include <TVector3.h>
  #include <TTree.h>
  #include <TRandom2.h>
+ #include <TSpline.h>
  #include <TChain.h>
  #include <TCanvas.h>
  #include <iostream>
@@ -68,7 +69,7 @@ int main(int argc, char *argv[]){
 		TH2D* ChanADC=new TH2D("ChanADC","ChanADC;Channel;ADC Charge",totalchans,0,totalchans,1000,0,8000);
 		TH2D* ChanE=new TH2D("ChanE","ChanE;Channel;Energy (MeV)",totalchans,0,totalchans,1000,0,50);
 	gROOT->cd();
-
+	
 	TChain* DataChain = Inputs.DataTree("OutTTree01");
 	TChain *tree  = DataChain;
 
@@ -89,6 +90,29 @@ int main(int argc, char *argv[]){
   tree->SetBranchAddress("Adc", &tAdc);
   long nentries = DataChain->GetEntries();
 
+  
+  gROOT->cd();
+    TFile* FilterTreeFile=nullptr;
+    TTree* FilterTree=nullptr;
+        if(Inputs.TestInput("OverwriteFilterFile")){
+			TString FilterFilename=Inputs.OutFilename;
+			FilterFilename.Remove(FilterFilename.Length() - 5);
+			FilterFilename.Append("_FilterTree.root");
+            FilterTreeFile=new TFile(FilterFilename,"RECREATE");
+            FilterTreeFile->cd();
+            FilterTree = new TTree("OutTTree01", "FilteredEventTree");
+        
+            FilterTree->AutoSave();
+            
+            FilterTree->Branch("Num", &tNum, "Num/s");
+            FilterTree->Branch("Ts",  &tTs );
+            FilterTree->Branch("Mod", &tMod);
+            FilterTree->Branch("Ch",  &tCh);
+            FilterTree->Branch("Adc", &tAdc);
+        }
+    gROOT->cd();
+  
+  
 	Short_t FileI=0;
     Short_t FileN=Inputs.Entries.size();
 	long NextRun=0;
@@ -105,6 +129,10 @@ int main(int argc, char *argv[]){
 	vector<bool> IDGateTest(Inputs.CutGates.size(),false);
 	
 	if(Inputs.TestInput("MirrorZ"))TelescopeHit::MirrorZ();
+	if(Inputs.TestInput("TargetZOffset"))TelescopeHit::TargetZOffset(Inputs.GetInput("TargetZOffset"));
+	
+    double TelescopeBuildWindow=120;
+    if(Inputs.TestInput("TelescopeBuildWindow"))TelescopeBuildWindow=Inputs.GetInput("TelescopeBuildWindow");
 	
 	cout<<endl;
 	
@@ -119,13 +147,17 @@ int main(int argc, char *argv[]){
 // // 		//Quick hard coded test
 // // 		if(!(((( tMod->at(0) )==2)||(( tMod->at(0) )==3)) && (tCh->at(0))<16 ))continue;
 		
+		if(PartSort){  
+				if(jentry>=nentries/10)jentry=nentries-1;//do the last loop steps
+		}
+		
 		EndOfRun=false;
 		if(jentry+1==NextRun){
 			if(FileI+1<FileN){
 				FileI++;
 				NextRun=Inputs.Entries[FileI];
 			}
-			EndOfRun=true;//Indicates the final even of a runfile			
+			EndOfRun=true;//Indicates the final event of a runfile			
 		}
 		
 		// Clear loop vectors
@@ -135,16 +167,26 @@ int main(int argc, char *argv[]){
 		Solar.clear();
 		LaBr.clear();
 		SiHits.clear();
-
+		
+		double Time_i=0;
         UShort_t Nhit=tNum;
         for(UShort_t i=0;i<Nhit;i++){  // Loop over hits from event vector and load into detector vectors
 			
-			DetHit hit((*tTs)[i],(*tAdc)[i],(*tMod)[i],(*tCh)[i]);
+			
+			if(i==0){
+				Time_i=0;
+			}else{
+				Time_i=(*tTs)[i];
+			}
+			
+			DetHit hit(Time_i,(*tAdc)[i],(*tMod)[i],(*tCh)[i]);
+// 			DetHit hit((*tTs)[i],(*tAdc)[i],(*tMod)[i],(*tCh)[i]);
 					
 //             int Mod_i=(*tMod)[i];
 //             int Chan_i=(*tCh)[i];
 //             double Time_i=(*tTs)[i];
 //             double dE=(*tAdc)[i];
+			
 			
 
             ChanE->Fill(ModChanList[hit.Mod()]+hit.Chan(),hit.Energy());
@@ -177,8 +219,8 @@ int main(int argc, char *argv[]){
 					break;
 			}
 		}
-			
-			
+
+
 // 		#include "sort_files/CalLoop.h"
 		#ifdef SORTFILE2
 			#include SORTFILE2
@@ -187,15 +229,25 @@ int main(int argc, char *argv[]){
 		if(jentry%10000==0){
 		cout<<setiosflags(ios::fixed)<<std::setprecision(2)<<100.*(double)jentry/nentries<<" % complete"<<"\r"<<flush;
 		}
+
+		if(EndOfRun){
+			if(FilterTreeFile)FilterTreeFile->Write(0,TObject::kWriteDelete);//Avoid those annoying multiple keys
 			
-		if(PartSort){  
-				if(jentry==nentries/10)jentry=nentries-2;
+			// End of last run
+			if(jentry+1==nentries){
+				
+			}
 		}
+			
 	}
 
 	gROOT->cd();
-
 	
+	if(FilterTreeFile){
+		FilterTreeFile->Write(0,TObject::kWriteDelete);//Avoid those annoying multiple keys
+		if(FilterTreeFile)FilterTreeFile->Close();
+	}
+
 	out.Write();
 	out.Close();
 

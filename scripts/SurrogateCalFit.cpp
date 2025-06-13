@@ -42,6 +42,12 @@ int main(int argc, char *argv[]){
 		bool Elastic=false;
 		bool View=false;
 		bool CalSet=false;
+		bool Zero=false;
+		bool DoGaus=true;
+		bool GausOnly=true;
+		bool Prune=true;
+		
+		if(GausOnly)DoGaus=true;
 		
 		string CalIn="";
 		string CalOut="";
@@ -54,6 +60,9 @@ int main(int argc, char *argv[]){
 			}
 			if(Opt=="view"||Opt=="v"||Opt=="View"){
 				View=true;
+			}
+			if(Opt=="zero"||Opt=="z"||Opt=="Zero"){
+				Zero=true;
 			}
 			if(Opt.EndsWith(".cal")||Opt.EndsWith(".Cal")){
 				if(!CalIn.size()){
@@ -73,11 +82,11 @@ int main(int argc, char *argv[]){
 		
 		if(CalSet)ReadCal(CalIn);
 
-		TF1* pol2=new TF1("pol2","[0]+[1]*x+[2]*x*x",0,6000);
+		TF1* pol2=new TF1("pol2","[0]+[1]*x+[2]*x*x",-1,6000);
 
 		UShort_t Eset[4]={DetHit::SiDeltaE,DetHit::SiDeltaE_B,DetHit::Si,DetHit::Si_B};
 
-
+		TF1* gaus=new TF1("gaus","gaus",0,6000);
 		
 		if(Elastic){
 				
@@ -100,10 +109,45 @@ int main(int argc, char *argv[]){
 						if(Hist->Integral()>100){
 							TProfile* py=Hist->ProfileY();
 							TGraphErrors* g=new TGraphErrors();
-	// 						g->SetPoint(0,0,0);
+							TGraphErrors* f=new TGraphErrors();
+							
+							if(Zero){
+								g->SetPoint(0,0,0);
+								g->SetPointError(0,5,0);
+								if(DoGaus){
+									f->SetPoint(0,0,0);
+									f->SetPointError(0,5,0);
+								}
+							}
+							
 							for(int b=1;b<=py->GetNbinsX();b++){
 								double n=py->GetBinContent(b);
 								if(n>0){
+									
+									if(DoGaus){
+										TH1*h=Hist->ProjectionX("pX",b,b);
+										int binMax = h->GetMaximumBin();               // Bin number of maximum
+										double xMax = h->GetBinCenter(binMax);         // X position of maximum
+										double yMax = h->GetBinContent(binMax);        // Height of maximum
+										double stdDev = h->GetRMS();                   // Standard deviation (RMS)
+										gaus->SetParameters(yMax,xMax,stdDev);
+										gaus->SetRange(xMax-stdDev,xMax+stdDev);
+										h->Fit(gaus,"RQN");
+										f->SetPoint(f->GetN(),gaus->GetParameter(1),py->GetBinCenter(b));
+										f->SetPointError(f->GetN()-1,gaus->GetParError(1),0);
+										g->SetPoint(g->GetN(),gaus->GetParameter(1),py->GetBinCenter(b));
+										g->SetPointError(g->GetN()-1,gaus->GetParError(1),0);
+										
+// 										if(View){
+// 											h->Fit(gaus,"R");
+// 											gPad->Update();
+// 											gPad->WaitPrimitive();
+// 										}
+										
+										delete h;
+										if(GausOnly) continue;
+									}
+									
 									double e=py->GetBinError(b);
 									if(e<1)e=50;
 									if(e<10)e=10;
@@ -111,21 +155,50 @@ int main(int argc, char *argv[]){
 									g->SetPointError(g->GetN()-1,e,0);
 								}
 							}
-							pol2->SetParameters(0,0.004,-1E-8);
-							pol2->SetParLimits(0,-12,12);
-							pol2->SetParLimits(1,0.00001,0.015);
-							if(k==0){
-								pol2->FixParameter(2,0);
-							}else{
-								pol2->ReleaseParameter(2);
-								pol2->SetParLimits(2,-0.0001,0.0001);
-							}
+							pol2->SetParameters(0,0.004,0);
+							pol2->SetParLimits(0,-1,1);
+							pol2->FixParameter(2,0);
+							
+// 							pol2->SetParLimits(1,0.00001,0.015);
+// 							if(k==0){
+// 								pol2->FixParameter(2,0);
+// 							}else{
+// 								pol2->ReleaseParameter(2);
+// 								pol2->SetParLimits(2,-0.001,0.001);
+// 							}
+							
+							g->Fit(pol2,"QN");
+							pol2->ReleaseParameter(2);
 							g->Fit(pol2,"+R");
+							
+							if(Prune){
+								double x, y;
+								int end=0;
+								if(Zero){end=1;}
+								
+								for (int i = g->GetN() - 1; i >= end; --i) {
+									g->GetPoint(i, x, y);
+									double xerr = g->GetErrorX(i);
+
+									// Estimate expected x for given y (numerical inversion)
+									double x_expected = pol2->GetX(y, pol2->GetXmin()-1, pol2->GetXmax());
+
+									if (std::abs(x - x_expected) > 10 * xerr) {
+										g->RemovePoint(i);
+									}
+									double std=std::abs(x - x_expected)/xerr;
+								}
+								
+							}
 							
 							if(View){
 								new TCanvas();
 								g->SetPoint(g->GetN(),0,0);
 								g->Draw("ap");
+								if(DoGaus){
+									f->SetLineColor(kRed);
+									f->Draw("samep");
+								}
 								gPad->Update();
 								gPad->WaitPrimitive();
 							}
@@ -178,7 +251,12 @@ int main(int argc, char *argv[]){
 					if(Hist->Integral()>100){
 						TProfile* py=Hist->ProfileY();
 						TGraphErrors* g=new TGraphErrors();
-// 						g->SetPoint(0,0,0);
+						
+						if(Zero){
+							g->SetPoint(0,0,0);
+							g->SetPointError(0,100,0);
+						}
+							
 						for(int b=10;b<=py->GetNbinsX();b++){
 							double n=py->GetBinContent(b);
 							if(n>0){

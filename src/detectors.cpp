@@ -113,6 +113,8 @@ double TelescopeHit::XZ_dE = TelescopeHit::MagXZnorm_dE + TelescopeHit::FaceOffs
 double TelescopeHit::XZ_E = TelescopeHit::MagXZnorm_E + TelescopeHit::FaceOffset_E;
 double TelescopeHit::OffsetY = (TelescopeHit::ActiveLength * 0.5) - 0.5 * TelescopeHit::dStrip;
 double TelescopeHit::OffsetXZ = TelescopeHit::OffsetY - TelescopeHit::FaceOriginOffsetXZ;
+double TelescopeHit::ZXAngle = TMath::DegToRad()*-55;
+TVector3 TelescopeHit::TargetOffset = TVector3();
 
 // The default assumption is the XZ strip 0 is nearest the beam axis and Y strip 0 is nearest floor
 bool TelescopeHit::Invert_dEA = false;
@@ -128,7 +130,7 @@ int TelescopeHit::AB(const DetHit& hit){
     else return 0;
 }
 
-
+// Doesnt handle target offset
 TVector3 TelescopeHit::SiliconDetectorPos(UShort_t N_dE,UShort_t N_E,bool Inv_dE,bool Inv_E,bool blur,bool intrinsic){
 
     // Flip the segment axis if needed
@@ -161,22 +163,37 @@ TVector3 TelescopeHit::SiliconDetectorPos(UShort_t N_dE,UShort_t N_E,bool Inv_dE
     // Create the vector in the prime frame
     TVector3 RetVec(Xprime,Yprime*YScale,-ZPrime);
 
+    
     if(!intrinsic){
         //Rotate from the prime frame into the lab-frame
-        RetVec.RotateY(TMath::DegToRad()*-55);
+        RetVec.RotateY(ZXAngle);
     }
 
     if(Z_Mirror) RetVec=TVector3(RetVec.X(),RetVec.Y(),-RetVec.Z());
+    
     return RetVec;
 }
 
-
 TVector3 TelescopeHit::SiliconPosDet(UShort_t N_dE,UShort_t N_E,int AB,bool blur,bool intrinsic){
+    TVector3 RetVec;
+        
     if(AB==0){
-        return SiliconDetectorPos(N_dE,N_E,Invert_dEA,Invert_EA,blur,intrinsic);
+        RetVec=TargetOffset+SiliconDetectorPos(N_dE,N_E,Invert_dEA,Invert_EA,blur,intrinsic);
     }else{
-        TVector3 RetVec=SiliconDetectorPos(N_dE,N_E,Invert_dEB,Invert_EB,blur,intrinsic);
+        RetVec=SiliconDetectorPos(N_dE,N_E,Invert_dEB,Invert_EB,blur,intrinsic);
         RetVec.SetX(-RetVec.X());
-        return RetVec;
     }
+    
+    // Havent robustly tested this correction and AB orientation
+    if(intrinsic){
+        TVector3 Offset=TargetOffset;
+        if(AB)Offset.RotateY(-ZXAngle);
+        else Offset.RotateY(ZXAngle);
+        RetVec+=Offset;
+        
+    }else{
+        RetVec+=TargetOffset;
+    }
+    
+    return RetVec;
 }

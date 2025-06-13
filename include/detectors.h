@@ -127,12 +127,18 @@ class TelescopeHit{
         return SiliconPosDet(fdEHit.Index(),fEHit.Index(),ab,blur,intrinsic);
     }
     
+    double EffectiveThickness(){
+        return std::abs(cos(GetPos().Theta())); 
+    }
     
+    // Doesnt handle target offset, intended for internal use
     static TVector3 SiliconDetectorPos(UShort_t N_dE,UShort_t N_E,bool Inv_dE=false,bool Inv_E=false,bool blur=false,bool intrinsic=false);
 
     static TVector3 SiliconPosDet(UShort_t N_dE,UShort_t N_E,int AB,bool blur=false,bool intrinsic=false);
     
     static void MirrorZ(){Z_Mirror=!Z_Mirror;}
+    
+    static void TargetZOffset(double tzo){TargetOffset=TVector3(0,0,tzo);}
 
     
     private :
@@ -150,7 +156,8 @@ class TelescopeHit{
     static double FaceOriginOffsetXZ;
 
     // Calculate the basic parameters
-    static double dStrip, XZ_dE, XZ_E, OffsetY, OffsetXZ;
+    static double dStrip, XZ_dE, XZ_E, OffsetY, OffsetXZ, ZXAngle;
+    static TVector3 TargetOffset;
 
     // The default assumption is the XZ strip 0 is nearest the beam axis and Y strip 0 is nearest floor
     static bool Invert_dEA, Invert_EA, Invert_dEB, Invert_EB, Z_Mirror;

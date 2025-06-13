@@ -21,22 +21,27 @@ HEAD = $(patsubst %.h,$(shell pwd)/%.h,$(SYSHEAD))
 SORTS = $(patsubst sort_files/%Loop.h,bin/%Sort,$(wildcard sort_files/*Loop.h))
 
 
+CALEXEC = bin/SurrogateCal
 SHAREDLIB = bin/libSurrogateSort.so
 TARG = bin/SurrogateSort
 
-$(TARG): Sort.cpp $(SHAREDLIB)  $(SORTS)
+
+$(TARG): Sort.cpp $(SHAREDLIB) $(SORTS) $(CALEXEC) src/RangeData.h
 	$(CC) $(CFLAGS) -o $@ $< bin/DictOutput.cxx -I. $(OBJECTS) $(LIBRS)
 	chmod +x $@
+	
+$(CALEXEC) : scripts/SurrogateCalFit.cpp $(SHAREDLIB)
+	$(CC) $(CFLAGS) -o $@ $< -I. $(OBJECTS) $(LIBRS)
 
 	
 JLIB_FOUND := $(shell echo "int main(){}" | gcc -x c++ -o /dev/null -ljroot_phys - 2>/dev/null && echo yes || echo no)
 ifeq ($(JLIB_FOUND),yes)
-bin/%Sort: Sort.cpp sort_files/%HistList.h sort_files/%Loop.h $(SHAREDLIB) 
+bin/%Sort: Sort.cpp sort_files/%HistList.h sort_files/%Loop.h $(SHAREDLIB) src/RangeData.h 
 	SORTFILE1="$(word 2, $^)"; \
 	SORTFILE2="\"$(word 3, $^)\""; \
 	$(CC) -DJPHYS -DSORTFILE1=$$SORTFILE1 -DSORTFILE2=$$SORTFILE2 $(CFLAGS) -o $@ $< bin/DictOutput.cxx -I. $(OBJECTS) $(LIBRS) -ljroot_phys
 else
-bin/%Sort: Sort.cpp sort_files/%HistList.h sort_files/%Loop.h $(SHAREDLIB) 
+bin/%Sort: Sort.cpp sort_files/%HistList.h sort_files/%Loop.h $(SHAREDLIB)  RangeData.h
 	SORTFILE1="$(word 2, $^)"; \
 	SORTFILE2="\"$(word 3, $^)\""; \
 	$(CC) -DSORTFILE1=$$SORTFILE1 -DSORTFILE2=$$SORTFILE2 $(CFLAGS) -o $@ $< bin/DictOutput.cxx -I. $(OBJECTS) $(LIBRS)
@@ -65,4 +70,5 @@ clean:
 	rm -f $(LIB)/bin/DictOutput*
 	rm -f $(LIB)/bin/Surrogate*
 	rm -f $(LIB)/bin/*Sort
+	rm -f $(LIB)/bin/*.so
 	rm -f $(LIB)/bin/*.so
