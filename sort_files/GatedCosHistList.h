@@ -49,7 +49,7 @@
     double MeV_MidBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um);
     double MeV_PostBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um*2);
     double TargRange0=RangeAm_umMeV->Eval(MeV_PostBack);
-    double MeV_MidTarg=EnergyAm_MeVum->Eval(TargRange0);
+    double MeV_MidTarg=EnergyAm_MeVum->Eval(TargRange0-AmHalf_um);
     
     cout<<endl<<"ENERGY AT CENTER OF BACKING "<< MeV_MidBack<<" MeV";
     cout<<endl<<"ENERGY AT CENTER OF TARGET "<< MeV_MidTarg<<" MeV";

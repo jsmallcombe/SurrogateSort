@@ -4,10 +4,14 @@
     bool PreCalibrated=Inputs.TestInput("PreCalibrated");
     bool DoProtons=false;
     bool DoAlphas=false;
+    bool UseCalibratedGate=false;
     
-    TCutG* Raw_dE_E_Charge_ElasticBeamGate[2]={new TCutG(),new TCutG()};
-    TCutG* Raw_dE_E_Charge_BeamGate[2]={new TCutG(),new TCutG()};
-    TCutG* Raw_dE_E_Charge_3HeGate[2]={new TCutG(),new TCutG()};
+    TCutG* Raw_dE_E_Charge_ElasticBeamGate[2]={new TCutG(),nullptr};
+    Raw_dE_E_Charge_ElasticBeamGate[1]=Raw_dE_E_Charge_ElasticBeamGate[0];
+    TCutG* Raw_dE_E_Charge_BeamGate[2]={new TCutG(),nullptr};
+    Raw_dE_E_Charge_BeamGate[1]=Raw_dE_E_Charge_BeamGate[0];
+    
+    TCutG* Calibrated_3HeGate[2]={nullptr,nullptr};
     
     TCutG* dEdX_Etot_Charge_ProtonGate[2]={nullptr,nullptr};
     TCutG* Raw_dE_E_Charge_4HeGate[2]={nullptr,nullptr};
@@ -18,8 +22,15 @@
             Raw_dE_E_Charge_ElasticBeamGate[0]=Inputs.CutGates[g];
             Raw_dE_E_Charge_ElasticBeamGate[1]=Inputs.CutGates[g];
         }
+        
         if(Inputs.GateID[g]==1){
+            //If gate B HASNT been set, set it to be the same (if using one A+B gate only A is assigned)
+            if(Raw_dE_E_Charge_BeamGate[1]==Raw_dE_E_Charge_BeamGate[0]){
+                Raw_dE_E_Charge_BeamGate[1]=Inputs.CutGates[g];
+            }
             Raw_dE_E_Charge_BeamGate[0]=Inputs.CutGates[g];
+        }
+        if(Inputs.GateID[g]==2){
             Raw_dE_E_Charge_BeamGate[1]=Inputs.CutGates[g];
         }
         
@@ -30,29 +41,28 @@
         
         if(Inputs.GateID[g]==4){
             Raw_dE_E_Charge_4HeGate[0]=Inputs.CutGates[g];
-            Raw_dE_E_Charge_4HeGate[1]=Inputs.CutGates[g];//This gate sets the bool so it makes sure neither are null
+            Raw_dE_E_Charge_4HeGate[1]=Inputs.CutGates[g];
         }
         if(Inputs.GateID[g]==5){
             Raw_dE_E_Charge_4HeGate[1]=Inputs.CutGates[g];
         }
         
         if(Inputs.GateID[g]==6){
-            Raw_dE_E_Charge_3HeGate[0]=Inputs.CutGates[g];
+            Calibrated_3HeGate[0]=Inputs.CutGates[g];
+            if(Calibrated_3HeGate[1]==nullptr){Calibrated_3HeGate[1]=Inputs.CutGates[g];}
         }
         if(Inputs.GateID[g]==7){
-            Raw_dE_E_Charge_3HeGate[1]=Inputs.CutGates[g];
+            Calibrated_3HeGate[1]=Inputs.CutGates[g];
         }
     }
     
     if(Raw_dE_E_Charge_4HeGate[0])DoProtons=true;
     if(dEdX_Etot_Charge_ProtonGate[0])DoAlphas=true;
+    if(PreCalibrated&&Calibrated_3HeGate[0])UseCalibratedGate=true;
      
     out.cd();
     out.mkdir("Raw");
     out.cd("Raw");
-
-        delete ChanE;
-        ChanE=new TH2D("ChanVsCharge","ChanVsCharge;Channel;Charge",totalchans,0,totalchans,1000,0,8000);
 
         TH2D* dEE[2]={
             new TH2D("Charge_E_dE_A","Charge_E_dE_A;Charge E;Charge dE",1000,0,8000,500,0,4000),
@@ -235,7 +245,7 @@
     double MeV_MidBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um);
     double MeV_PostBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um*2);
     double TargRange0=RangeAm_umMeV->Eval(MeV_PostBack);
-    double MeV_MidTarg=EnergyAm_MeVum->Eval(TargRange0);
+    double MeV_MidTarg=EnergyAm_MeVum->Eval(TargRange0-AmHalf_um);
     
     cout<<endl<<"ENERGY AT CENTER OF BACKING "<< MeV_MidBack<<" MeV";
     cout<<endl<<"ENERGY AT CENTER OF TARGET "<< MeV_MidTarg<<" MeV";

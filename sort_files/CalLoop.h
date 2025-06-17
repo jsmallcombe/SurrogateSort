@@ -38,6 +38,8 @@
         double dEdXDirect=Cal_dE*EffThick;
                 
         // Fill basic histograms
+            
+        bool IsBeam=Raw_dE_E_Charge_BeamGate[Si.AB()]->IsInside(Etot,dEdX); 
         
         dEE[Si.AB()]->Fill(E,dE);
         dEEtot[Si.AB()]->Fill(Etot,dE);
@@ -46,7 +48,7 @@
         
         dEdXEi[Si.AB()][Si.dE().Index()]->Fill(Etot,dEdX);
         
-        dEEffEtot[Si.AB()]->Fill(Etot,dEdX);
+        if(IsBeam){dEEffEtot[Si.AB()]->Fill(Etot,dEdX);}
         
         dE_E_Calibrated[Si.AB()]->Fill(Cal_E,Cal_dE);
         dE_Etot_Calibrated[Si.AB()]->Fill(Cal_E+Cal_dE,Cal_dE);
@@ -54,12 +56,92 @@
         dEEi_cal[Si.AB()][Si.dE().Index()]->Fill(Cal_E,Cal_dE);
         EdEi_cal[Si.AB()][Si.E().Index()]->Fill(Cal_E,Cal_dE);
 
-// //  // Start ID gated section
+    //////////////////// End of basic histograms
         
+        
+//////////////////// Do Corrections ASSUMING it is beam particle (without gating)
+//////////////////// Energy correted ID gate can then be used BEFORE filling histograms
+
+        double EnergyMidDeltaActive_Average=0;
+        double dEdX_Average=0;
+        double CalcEnergyEdet=0;   
+        double CalcEnergyPostDeltaActive=0;
+        double CalcEnergyMidDeltaActive=0;
+        double CalcEnergyPreDeltaActive=0;
+        double dECalc=0;
+        double dEdXCalc=0;
+        double EnergyMidDeltaActive=0;
+        double dEmidcalc=0;     
+        
+        // Only do this section after initial calibration
+        if(PreCalibrated){
+            
+    //////////////////// Determine  convoluted correction for He3 beam particle for deltaE detector /////
+
+            // Range before E detector active region
+            double PreRange=RangeSi_umMeV->Eval(Cal_E);  
+            
+            // Energy at 3 points (start,middle,end) of the active region of the dE, calulcated exclusively from the E detector energy
+            CalcEnergyPostDeltaActive=EnergySi_MeVum->Eval(PreRange+(E_Dead_um+dE_BackDead_um)/EffThick); 
+            CalcEnergyMidDeltaActive=EnergySi_MeVum->Eval(PreRange+(E_Dead_um+dE_Thickness_um*0.5)/EffThick); 
+            CalcEnergyPreDeltaActive=EnergySi_MeVum->Eval(PreRange+(E_Dead_um+dE_Thickness_um-dE_FrontDead_um)/EffThick);
+            
+            // dE/dX "measurement" from the above range calculations
+            dECalc=CalcEnergyPreDeltaActive-CalcEnergyPostDeltaActive;
+            dEdXCalc=dECalc*EffThick;
+            
+            // Sum energy at midpoint using actual dE+E measurement (and deadlayer projection from E)
+            EnergyMidDeltaActive=CalcEnergyPostDeltaActive+Cal_dE*0.5;
+            
+            // Taking and average because the dE calibration is a little wonky 
+            // Should compare without this average once the calibration is better
+            EnergyMidDeltaActive_Average=(CalcEnergyMidDeltaActive+EnergyMidDeltaActive)*0.5;
+            dEdX_Average=(dEdXDirect+dEdXCalc)*0.5;
+
+            dEdX_Etot_SumCalibrated[Si.AB()]->Fill(EnergyMidDeltaActive,dEdXDirect);
+            
+            dEdX_Etot_SumCalibrated3He[Si.AB()]->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
+                
+//////////////////// Do convoluted correction Assuming a He3 beam particle for E detector /////
+    
+            double dEActive_umEff= dEActive_um/EffThick;
+                 
+            double rstep=100; // Start with very large step size as quite computationally intensive
+            // We should create a simple lookup table for the 256 pixels, it would be much faster
+            for(int r=PreRange*0.7;r<E_Thickness_um;r+=rstep){
+            
+                double R=r;  // Guessed Range at the end of dE Active
+                double R0=R+dEActive_umEff; //Range at the start of dE active
+                
+                double E1=EnergySi_MeVum->Eval(R); 
+                double E2=EnergySi_MeVum->Eval(R0); 
+                
+                double Ecomp=E2-E1; // Energy that should have been lost if guess R is correct
+            
+                if(Ecomp<Cal_dE){ // Have surpassed the exact range that agrees with calibration Cal_dE
+                
+                    if(rstep>1){ //Circle back more accurately
+                        r-=rstep;
+                        rstep/=10;
+                        r-=rstep;
+                        continue;
+                    }else{ // Break with the determined energy at precision 1um+-0.5
+                        double RE=R-((E_Dead_um+dE_BackDead_um)/EffThick);
+                        if(R>10){
+                            CalcEnergyEdet=EnergySi_MeVum->Eval(RE-rr.Uniform()); //changed from -0.5 to -random due to fenceposting
+                            dEmidcalc=EnergySi_MeVum->Eval(R+dEActive_umEff*0.5-rr.Uniform());
+                        }
+                        break;
+                    }
+                }
+            }
+        }//end PreCalibrated
+        
+            
         double KE_PostTarget=0;
         
-        bool IsBeam=Raw_dE_E_Charge_BeamGate[Si.AB()]->IsInside(Etot,dEdX);
-
+        if(UseCalibratedGate)IsBeam=Calibrated_3HeGate[Si.AB()]->IsInside(EnergyMidDeltaActive_Average,dEdX_Average);
+                    
         if(IsBeam){
             
             // First determine the calculated post-target energy, is it elastic on Uranium or Aluminium or Oxygen
@@ -88,80 +170,20 @@
                 CalElast_dE[Si.AB()][Si.dE().Index()]->Fill(dE,Energy_Active_dE);
             }
             
-            // Only do this section after initial calibration
+//////////////////// Fill Histograms which depend on the convoluted corrections /////
+    
             if(PreCalibrated){
-                
-     //////////////////// Determine  convoluted correction for He3 beam particle for deltaE detector /////
-
-                // Range before E detector active region
-                double PreRange=RangeSi_umMeV->Eval(Cal_E);  
-                
-                // Energy at 3 points (start,middle,end) of the active region of the dE, calulcated exclusively from the E detector energy
-                double CalcEnergyPostDeltaActive=EnergySi_MeVum->Eval(PreRange+(E_Dead_um+dE_BackDead_um)/EffThick); 
-                double CalcEnergyMidDeltaActive=EnergySi_MeVum->Eval(PreRange+(E_Dead_um+dE_Thickness_um*0.5)/EffThick); 
-                double CalcEnergyPreDeltaActive=EnergySi_MeVum->Eval(PreRange+(E_Dead_um+dE_Thickness_um-dE_FrontDead_um)/EffThick);
-                
-                // dE/dX "measurement" from the above range calculations
-                double dECalc=CalcEnergyPreDeltaActive-CalcEnergyPostDeltaActive;
-                double dEdXCalc=dECalc*EffThick;
-                
-                // Sum energy at midpoint using actual dE+E measurement (and deadlayer projection from E)
-                double EnergyMidDeltaActive=CalcEnergyPostDeltaActive+Cal_dE*0.5;
-                
-                // Taking and average because the dE calibration is a little wonky 
-                // Should compare without this average once the calibration is better
-                double EnergyMidDeltaActive_Average=(CalcEnergyMidDeltaActive+EnergyMidDeltaActive)*0.5;
-                double dEdX_Average=(dEdXDirect+dEdXCalc)*0.5;
-
-                dEdX_Etot_SumCalibrated[Si.AB()]->Fill(EnergyMidDeltaActive,dEdXDirect);
-                
-                dEdX_Etot_SumCalibrated3He[Si.AB()]->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
-                    
-    //////////////////// Do convoluted correction Assuming a He3 beam particle for E detector /////
-        
-                double dEActive_umEff= dEActive_um/EffThick;
-                
-                double CalcEnergyEdet=0;   
-                double dEmidcalc=0;          
-                double rstep=100; // Start with very large step size as quite computationally intensive
-                // We should create a simple lookup table for the 256 pixels, it would be much faster
-                for(int r=PreRange*0.7;r<E_Thickness_um;r+=rstep){
-                
-                    double R=r;  // Guessed Range at the end of dE Active
-                    double R0=R+dEActive_umEff; //Range at the start of dE active
-                    
-                    double E1=EnergySi_MeVum->Eval(R); 
-                    double E2=EnergySi_MeVum->Eval(R0); 
-                    
-                    double Ecomp=E2-E1; // Energy that should have been lost if guess R is correct
-                
-                    if(Ecomp<Cal_dE){ // Have surpassed the exact range that agrees with calibration Cal_dE
-                    
-                        if(rstep>1){ //Circle back more accurately
-                            r-=rstep;
-                            rstep/=10;
-                            r-=rstep;
-                            continue;
-                        }else{ // Break with the determined energy at precision 1um+-0.5
-                            double RE=R-((E_Dead_um+dE_BackDead_um)/EffThick);
-                            if(R>10){
-                                CalcEnergyEdet=EnergySi_MeVum->Eval(RE-rr.Uniform()); //changed from -0.5 to -random due to fenceposting
-                                dEmidcalc=EnergySi_MeVum->Eval(R+dEActive_umEff*0.5-rr.Uniform());
-                            }
-                            break;
-                        }
-                    }
-                }
-                
-    //////////////////// Fill Histograms which depend on the above convoluted corrections /////
-        
                 if(CalcEnergyEdet){
                     E_Check[Si.AB()]->Fill(Cal_E,CalcEnergyEdet); 
                     E_Check[Si.AB()]->Fill(CalcEnergyEdet,CalcEnergyEdet); 
                     
                     InvCal_E[Si.AB()][Si.dE().Index()]->Fill(E,CalcEnergyEdet);
-                    InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,CalcEnergyEdet);
-                    InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,Cal_E);
+    //                     InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,CalcEnergyEdet);
+    //                     InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,Cal_E);
+                    if(abs(CalcEnergyEdet-Cal_E)<0.2){
+//                         InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,0.3*CalcEnergyEdet+0.7*Cal_E);
+                        InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,Cal_E);
+                    }
                     
                     InvCal_ECompare[Si.AB()][Si.dE().Index()]->Fill(Cal_E,CalcEnergyEdet);
                     
@@ -173,19 +195,23 @@
                 
                 dE_Check[Si.AB()]->Fill(Cal_dE,dECalc); 
                 dE_Check[Si.AB()]->Fill(dECalc,dECalc); 
-                     
+                        
     //         if(Raw_dE_E_Charge_3HeGate[Si.AB()]->IsInside(Etot,dEdX)){// special gate that gets those which dont see elastic
                 if(Etot<ElasticCut){
                     
                     InvCal_dE[Si.AB()][Si.dE().Index()]->Fill(dE,dECalc);
-                    InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,dECalc);
-                    InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,Cal_dE);
+    //                     InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,dECalc);
+    //                     InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,Cal_dE);
+                    if(abs(dECalc-Cal_dE)<0.2){
+//                         InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,0.5*(dECalc+Cal_dE));
+                        InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,0.3*dECalc+0.7*Cal_dE);
+                    }
                     
                     InvCal_dECompare[Si.AB()][Si.dE().Index()]->Fill(Cal_dE,dECalc);
                 }
                 
             }//end PreCalibrated
-            
+                
             
         }//end IsBeam
         

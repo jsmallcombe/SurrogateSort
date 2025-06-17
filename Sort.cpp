@@ -90,13 +90,14 @@ int main(int argc, char *argv[]){
   tree->SetBranchAddress("Adc", &tAdc);
   long nentries = DataChain->GetEntries();
 
-  
+  TString FileBaseName=Inputs.OutFilename;
+  FileBaseName.Remove(FileBaseName.Length() - 5);
+			
   gROOT->cd();
     TFile* FilterTreeFile=nullptr;
     TTree* FilterTree=nullptr;
         if(Inputs.TestInput("OverwriteFilterFile")){
-			TString FilterFilename=Inputs.OutFilename;
-			FilterFilename.Remove(FilterFilename.Length() - 5);
+			TString FilterFilename = FileBaseName;
 			FilterFilename.Append("_FilterTree.root");
             FilterTreeFile=new TFile(FilterFilename,"RECREATE");
             FilterTreeFile->cd();

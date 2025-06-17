@@ -11,11 +11,6 @@
         beam_energy_MeV=Inputs.GetInput("BeamEnergy");
     }
     
-    double TargetZoffset=0; 
-    if(Inputs.TestInput("ZOffset")){
-        TargetZoffset=Inputs.GetInput("ZOffset");
-    }
-    
     double AlBacking_um=1.99;
     if(Inputs.TestInput("Backing_Thickness_um")){
         AlBacking_um=Inputs.GetInput("Backing_Thickness_um");

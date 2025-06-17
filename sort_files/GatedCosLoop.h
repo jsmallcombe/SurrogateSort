@@ -30,7 +30,7 @@
         double Theta=World.Theta();
         double ThetaDeg=Theta/TMath::DegToRad();
         double CosTheta=cos(Theta);
-        double AbdCos=std::abs(CosTheta);
+        double AbsCosTheta=std::abs(CosTheta);
         double Phi=PhiOffset(World.Phi())/TMath::DegToRad();
 
         double E=Si.E().Energy();
@@ -81,13 +81,13 @@
             double EnergyAtStartOfActiveDE=(CalcEnergyPreDeltaActive+(CalcEnergyPostDeltaActive+dE))*0.5;
             
             double RangeAtStartOfActiveDE=Range_um[g][i_Si]->Eval(EnergyAtStartOfActiveDE);  
-            double EnergyAtStartOfDE=Energy_MeV[g][i_Si]->Eval(RangeAtStartOfActiveDE-(dE_FrontDead_um/EffThick));
+            double EnergyAtStartOfDE=Energy_MeV[g][i_Si]->Eval(RangeAtStartOfActiveDE+(dE_FrontDead_um/EffThick));
             double RangeInBacking=Range_um[g][i_Al]->Eval(EnergyAtStartOfDE);
             
-            double EnergyAtBackingCenter=Energy_MeV[g][i_Al]->Eval(RangeInBacking-((AlBacking_um*0.5)/CosTheta));
-            double EnergyBeforeBacking=Energy_MeV[g][i_Al]->Eval(RangeInBacking-(AlBacking_um/CosTheta));
+            double EnergyAtBackingCenter=Energy_MeV[g][i_Al]->Eval(RangeInBacking+((AlBacking_um*0.5)/AbsCosTheta));
+            double EnergyBeforeBacking=Energy_MeV[g][i_Al]->Eval(RangeInBacking+(AlBacking_um/AbsCosTheta));
             double RangeInTarget=Range_um[g][i_Am0]->Eval(EnergyBeforeBacking);
-            double EnergyAtCenter=Energy_MeV[g][i_Am0]->Eval(RangeInTarget-(AmHalf_um/CosTheta));
+            double EnergyAtCenter=Energy_MeV[g][i_Am0]->Eval(RangeInTarget+(AmHalf_um/AbsCosTheta));
         
             Gate_E_theta[g]->Fill(EnergyAtCenter,ThetaDeg);
             Gate_E_costheta[g]->Fill(EnergyAtCenter,CosTheta);
@@ -106,6 +106,35 @@
 //         GammaTreeFile.Write(0,TObject::kWriteDelete);//Avoid those annoying multiple keys
         // End of last run
         if(jentry+1==nentries){
+            TCanvas* KinCheck=new TCanvas("","",1920,1080);
+            KinCheck->Divide(2,1);
+            KinCheck->cd(1);
+            gPad->Update();
+            gPad->SetLogz();
+            Gate_E_thetaBlur[0]->DrawCopy("col")->GetXaxis()->SetRangeUser(5,35);
+            Am->SetLineWidth(2);
+            Am->Draw("samel");
+            O->SetLineWidth(2);
+            O->Draw("samel");
+            KinCheck->cd(2);
+            gPad->Update();
+            gPad->SetLogz();
+            Gate_E_thetaBlurBack[0]->DrawCopy("col")->GetXaxis()->SetRangeUser(5,35);
+            Al->SetLineWidth(2);
+            Al->Draw("samel");
+            
+            // 	gStyle->SetLineScalePS(1.5); // default is 3, which looks crap
+            gStyle->SetLineScalePS(2); // default is 3, which looks crap
+            // 	Can->Write("Efficiency.pdf");
+            // 	KinCheck->SaveAs(FileBaseName+"KinCheck.eps");
+            // 	KinCheck->SaveAs(FileBaseName+"KinCheck.pdf");
+            KinCheck->SaveAs(FileBaseName+"KinCheck.png"); 
+            
+            out.cd();
+                KinCheck->Write("KinCheckCan");
+            gROOT->cd();
+    
+    
 //             cout<<endl<<"Scaling by hardcoded solid angle"<<endl;
 //             for(auto g : Gate_E_strad){
 //                 g->Scale(1/1.52333);
