@@ -164,13 +164,22 @@
     TH2D* dEEi_cal[2][16];
     for(UShort_t i=0;i<16;i++)dEEi_cal[0][i]=new TH2D(Form("dEE_calA_%d",i),Form("dE%d vs any E A;E (MeV);dE%d (MeV)",i,i),1000,0,40,500,0,15);
     for(UShort_t i=0;i<16;i++)dEEi_cal[1][i]=new TH2D(Form("dEE_calB_%d",i),Form("dE%d vs any E B;E (MeV);dE%d (MeV)",i,i),1000,0,40,500,0,15);
+    TH2D* dedxmid_dEi_cal[2][16];
+    for(UShort_t i=0;i<16;i++)dedxmid_dEi_cal[0][i]=new TH2D(Form("dedxmid_dE_calA_%d",i),Form("dE%d vs any E A;Energy At dE Midpoint (Calc. MeV);dE%d/dX (MeV/arb.)",i,i),1000,0,40,500,0,15);
+    for(UShort_t i=0;i<16;i++)dedxmid_dEi_cal[1][i]=new TH2D(Form("dedxmid_dE_calB_%d",i),Form("dE%d vs any E B;Energy At dE Midpoint (Calc. MeV);dE%d/dX (MeV/arb.)",i,i),1000,0,40,500,0,15);
    out.cd();
+   
 
    out.mkdir("Calibrated/E_Chan_cal");
    out.cd("Calibrated/E_Chan_cal");
     TH2D* EdEi_cal[2][16];
     for(UShort_t i=0;i<16;i++)EdEi_cal[0][i]=new TH2D(Form("EdE_calA_%d",i),Form("E%d vs any dE A;E%d (MeV);dE (MeV)",i,i),1000,0,40,500,0,15);
     for(UShort_t i=0;i<16;i++)EdEi_cal[1][i]=new TH2D(Form("EdE_calB_%d",i),Form("E%d vs any dE B;E%d (MeV);dE (MeV)",i,i),1000,0,40,500,0,15);
+    
+    TH2D* dedxmid_Ei_cal[2][16];
+    for(UShort_t i=0;i<16;i++)dedxmid_Ei_cal[0][i]=new TH2D(Form("dedxmid_E_calA_%d",i),Form("E%d vs any E A;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",i),1000,0,40,500,0,15);
+    for(UShort_t i=0;i<16;i++)dedxmid_Ei_cal[1][i]=new TH2D(Form("dedxmid_E_calB_%d",i),Form("E%d vs any E B;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",i),1000,0,40,500,0,15);
+    
    out.cd();
    
     

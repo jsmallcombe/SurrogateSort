@@ -1,3 +1,9 @@
+{
+	// source bin/thisSSlib.sh
+	// root 
+	// gSystem->Load("libSurrogateSort.so"); 
+	// .x Examples/CalBuildExample.C
+
 	for(int i=0;i<4;i++){
 		DetHit::SetDetType(0,i,DetHit::LaBr);
 		DetHit::SetIndex(0,i,i);
@@ -24,3 +30,4 @@
 	}
 	
 	WriteCal("InitialCalFile.cal");
+}

@@ -1,5 +1,5 @@
 // //  The splines are slightly faster and more accurate, but causes edge case misbehaviour
-// #define NOSPLINES
+#define NOSPLINES
 
     double target_thickness_ug_cm2=158.2;//Jan2025
     double target_density_g_cm3=11.68; //AmO2

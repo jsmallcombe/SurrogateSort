@@ -73,6 +73,8 @@
         double EnergyMidDeltaActive=0;
         double dEmidcalc=0;     
         
+        bool EventCal=((Cal_E>0.01)&&(Cal_dE>0.01));
+    
         // Only do this section after initial calibration
         if(PreCalibrated){
             
@@ -97,11 +99,16 @@
             // Should compare without this average once the calibration is better
             EnergyMidDeltaActive_Average=(CalcEnergyMidDeltaActive+EnergyMidDeltaActive)*0.5;
             dEdX_Average=(dEdXDirect+dEdXCalc)*0.5;
-
-            dEdX_Etot_SumCalibrated[Si.AB()]->Fill(EnergyMidDeltaActive,dEdXDirect);
             
-            dEdX_Etot_SumCalibrated3He[Si.AB()]->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
+            if(EventCal){
+                dEdX_Etot_SumCalibrated[Si.AB()]->Fill(EnergyMidDeltaActive,dEdXDirect);
                 
+                dEdX_Etot_SumCalibrated3He[Si.AB()]->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
+                
+                dedxmid_dEi_cal[Si.AB()][Si.dE().Index()]->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
+                dedxmid_Ei_cal[Si.AB()][Si.E().Index()]->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
+            }
+            
 //////////////////// Do convoluted correction Assuming a He3 beam particle for E detector /////
     
             double dEActive_umEff= dEActive_um/EffThick;
@@ -136,7 +143,6 @@
                 }
             }
         }//end PreCalibrated
-        
             
         double KE_PostTarget=0;
         
@@ -181,13 +187,13 @@
     //                     InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,CalcEnergyEdet);
     //                     InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,Cal_E);
                     if(abs(CalcEnergyEdet-Cal_E)<0.2){
-//                         InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,0.3*CalcEnergyEdet+0.7*Cal_E);
-                        InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,Cal_E);
+                        if(EventCal)InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,0.3*CalcEnergyEdet+0.7*Cal_E);
+//                         InvCal_EComb[Si.AB()][Si.dE().Index()]->Fill(E,Cal_E);
                     }
                     
                     InvCal_ECompare[Si.AB()][Si.dE().Index()]->Fill(Cal_E,CalcEnergyEdet);
                     
-                    dEdX_Etot_SumCalibrated3He[Si.AB()]->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
+                    if(EventCal)dEdX_Etot_SumCalibrated3He[Si.AB()]->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
                     
                     dEdX_Etot_SumCalibrated3HeAv[Si.AB()]->Fill((dEmidcalc+CalcEnergyMidDeltaActive+EnergyMidDeltaActive)/3.0,dEdX_Average);
                     
@@ -203,8 +209,8 @@
     //                     InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,dECalc);
     //                     InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,Cal_dE);
                     if(abs(dECalc-Cal_dE)<0.2){
-//                         InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,0.5*(dECalc+Cal_dE));
-                        InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,0.3*dECalc+0.7*Cal_dE);
+                        if(EventCal)InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,0.5*(dECalc+Cal_dE));
+//                         InvCal_dEComb[Si.AB()][Si.dE().Index()]->Fill(dE,0.3*dECalc+0.7*Cal_dE);
                     }
                     
                     InvCal_dECompare[Si.AB()][Si.dE().Index()]->Fill(Cal_dE,dECalc);

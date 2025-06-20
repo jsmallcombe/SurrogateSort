@@ -20,7 +20,6 @@ OBJECTS = $(patsubst include/%.h,bin/%.o,$(SYSHEAD))
 HEAD = $(patsubst %.h,$(shell pwd)/%.h,$(SYSHEAD))
 SORTS = $(patsubst sort_files/%Loop.h,bin/%Sort,$(wildcard sort_files/*Loop.h))
 
-
 CALEXEC = bin/SurrogateCal
 SHAREDLIB = bin/libSurrogateSort.so
 TARG = bin/SurrogateSort

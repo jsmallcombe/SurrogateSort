@@ -7,16 +7,16 @@ echo "#pragma link C++ nestedclasses;" >> bin/Linkdef.h
 echo "" >> bin/Linkdef.h
 
 
-# for f in include/*.h
+for f in include/*.h
+do
+# for f in $@
 # do
-# # for f in $@
-# # do
-# 
-# echo -n "#pragma link C++ defined_in \"" >> bin/Linkdef.h
-# echo -n $f >> bin/Linkdef.h
-# echo  "\";" >> bin/Linkdef.h
-# 
-# done
+
+echo -n "#pragma link C++ defined_in \"" >> bin/Linkdef.h
+echo -n $f >> bin/Linkdef.h
+echo  "\";" >> bin/Linkdef.h
+
+done
 
 echo -n "#pragma link C++ defined_in \"Sort.cpp\";" >> bin/Linkdef.h
 

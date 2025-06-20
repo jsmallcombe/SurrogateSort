@@ -114,6 +114,11 @@ int main(int argc, char *argv[]){
 					if(k==0&&j==1)HStr=Form("ForCal/ElasticDataInverse/InvCal_dEComb_B_%d",i);
 					if(k==1&&j==0)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_EComb_A_%d",i);
 					if(k==1&&j==1)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_EComb_B_%d",i);
+					
+// 					if(k==0&&j==0)HStr=Form("ForCal/ElasticDataInverse/InvCal_dE_A_%d",i);
+// 					if(k==0&&j==1)HStr=Form("ForCal/ElasticDataInverse/InvCal_dE_B_%d",i);
+// 					if(k==1&&j==0)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_E_A_%d",i);
+// 					if(k==1&&j==1)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_E_B_%d",i);
 				}
 				
 				if(CalSet)DetHit::SetCalibrationDirect(Eset[j+k*2],i,0,0,0);
