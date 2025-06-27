@@ -178,6 +178,18 @@
     out.cd("ForCal");
 
     out.cd();
+    out.mkdir("ForCal/ElasticDataUngated");
+    out.cd("ForCal/ElasticDataUngated");
+        TH2F* CalElastRaw_dE[2][16];
+        TH2F* CalElastRaw_E[2][16];
+        for(int i=0;i<16;i++)CalElastRaw_dE[0][i]=new TH2F(Form("Cal_dEraw_A_%d",i),Form("Cal_dEraw_A_%d;E_i;dE Charge",i),16,0,16,500,0,3000);
+        for(int i=0;i<16;i++)CalElastRaw_E[0][i]=new TH2F(Form("Cal_Eraw_A_%d",i),Form("Cal_Eraw_A_%d;dE_i;E Charge",i),16,0,16,1000,0,6000);
+        for(int i=0;i<16;i++)CalElastRaw_dE[1][i]=new TH2F(Form("Cal_dEraw_B_%d",i),Form("Cal_dEraw_B_%d;E_i;dE Charge",i),16,0,16,500,0,3000);
+        for(int i=0;i<16;i++)CalElastRaw_E[1][i]=new TH2F(Form("Cal_Eraw_B_%d",i),Form("Cal_Eraw_B_%d;dE_i;E Charge",i),16,0,16,1000,0,6000);
+        //Multiple loops so order in file is nicer
+    
+    out.cd();
+    
     out.mkdir("ForCal/ElasticData");
     out.cd("ForCal/ElasticData");
     
@@ -388,11 +400,13 @@
    gROOT->cd();
    
     #ifdef NOSPLINES
+        vector<TGraph*> KinG={KinematicElasticSet,KinematicElasticSetAl};
         TGraph *KinematicElastic = KinematicElasticSet;
         TGraph *KinematicElasticAl = KinematicElasticSetAl;  
     #else
         TSpline3 *KinematicElastic = new TSpline3("KinematicElastic",KinematicElasticSet);  
-        TSpline3 *KinematicElasticAl = new TSpline3("KinematicElasticAl",KinematicElasticSetAl);  
+        TSpline3 *KinematicElasticAl = new TSpline3("KinematicElasticAl",KinematicElasticSetAl);
+        vector<TSpline3*> KinG={KinematicElastic,KinematicElasticAl};  
     #endif  
     
 //     TGraph* KinematicAlphaDecay = new TGraph();
@@ -494,3 +508,43 @@
 //         AlphaCalGraph[1]->Write("AlphaDecayFitB");
 //    gROOT->cd();
    
+    
+    std::ofstream outFile(FileBaseName+"_KinData.txt", std::ios::out | std::ios::trunc);
+    if (outFile) {
+        outFile << "dE_N, E_N, dE_1, E_1, dE_2, E_2\n";
+
+        for(int i=0;i<16;i++){//dE
+            for(int j=0;j<16;j++){//E
+                outFile<<i<<" , "<<j;
+                for(auto G : KinG){
+                    TVector3 ijWorld = TelescopeHit::SiliconDetectorPos(i,j,false,false,false,false);
+                    TVector3 ijIntrinsic =TelescopeHit::SiliconDetectorPos(i,j,false,false,false,false);
+
+                    double ijEffThick=std::abs(cos(ijIntrinsic.Theta())); // Angle though
+                    double ijThetaRad=ijWorld.Theta(); // Angle target
+
+                    double ijKE_PostTarget=G->Eval(ijThetaRad);//Get energy from pre-solved kinematics
+
+                    double ijEnergy_Active_E=0;
+                    double ijEnergy_Active_dE=0;
+
+                    if(ijKE_PostTarget>0){
+                        double ijSiRange=RangeSi_umMeV->Eval(ijKE_PostTarget);
+                        
+                        if(ijSiRange>((dE_Thickness_um+E_Dead_um)/ijEffThick)){
+                            
+                            ijEnergy_Active_E=EnergySi_MeVum->Eval(ijSiRange-(dE_Thickness_um+E_Dead_um)/ijEffThick);
+
+                            ijEnergy_Active_dE=EnergySi_MeVum->Eval(ijSiRange-(dE_FrontDead_um/ijEffThick))-EnergySi_MeVum->Eval(ijSiRange-(dE_Thickness_um-dE_BackDead_um)/ijEffThick);
+                        }
+                    }     
+                    
+                    outFile<<" , "<<ijEnergy_Active_dE<<" , "<<ijEnergy_Active_E;
+                }
+            outFile<<endl;
+            } //E
+        }//dE
+    }
+    outFile<<endl;
+    outFile.close();
+        

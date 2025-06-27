@@ -152,6 +152,8 @@
         if(UseCalibratedGate)IsBeam=Calibrated_3HeGate[Si.AB()]->IsInside(EnergyMidDeltaActive_Average,dEdX_Average);
                     
         if(IsBeam){
+            CalElastRaw_E[Si.AB()][Si.E().Index()]->Fill(Si.dE().Index(),E);
+            CalElastRaw_dE[Si.AB()][Si.dE().Index()]->Fill(Si.E().Index(),dE);
             
             // First determine the calculated post-target energy, is it elastic on Uranium or Aluminium or Oxygen
             
@@ -185,12 +187,15 @@
             // fill the calibration histograms
             if(KE_PostTarget>0){
                 double SiRange=RangeSi_umMeV->Eval(KE_PostTarget);
-                double Energy_Active_E=EnergySi_MeVum->Eval(SiRange-(dE_Thickness_um+E_Dead_um)/EffThick);
                 
-                double Energy_Active_dE=EnergySi_MeVum->Eval(SiRange-(dE_FrontDead_um/EffThick))-EnergySi_MeVum->Eval(SiRange-(dE_Thickness_um-dE_BackDead_um)/EffThick);
+                if(SiRange>((dE_Thickness_um+E_Dead_um)/EffThick)){
+                    double Energy_Active_E=EnergySi_MeVum->Eval(SiRange-(dE_Thickness_um+E_Dead_um)/EffThick);
+                    
+                    double Energy_Active_dE=EnergySi_MeVum->Eval(SiRange-(dE_FrontDead_um/EffThick))-EnergySi_MeVum->Eval(SiRange-(dE_Thickness_um-dE_BackDead_um)/EffThick);
 
-                CalElast_E[Si.AB()][Si.E().Index()]->Fill(E,Energy_Active_E);
-                CalElast_dE[Si.AB()][Si.dE().Index()]->Fill(dE,Energy_Active_dE);
+                    CalElast_E[Si.AB()][Si.E().Index()]->Fill(E,Energy_Active_E);
+                    CalElast_dE[Si.AB()][Si.dE().Index()]->Fill(dE,Energy_Active_dE);
+                }
             }
             
 //////////////////// Fill Histograms which depend on the convoluted corrections /////
