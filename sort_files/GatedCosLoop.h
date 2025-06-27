@@ -84,6 +84,8 @@
             double EnergyAtStartOfDE=Energy_MeV[g][i_Si]->Eval(RangeAtStartOfActiveDE+(dE_FrontDead_um/EffThick));
             double RangeInBacking=Range_um[g][i_Al]->Eval(EnergyAtStartOfDE);
             
+           // As the target is reversed when MirrorZ, this section does not need to change.
+            
             double EnergyAtBackingCenter=Energy_MeV[g][i_Al]->Eval(RangeInBacking+((AlBacking_um*0.5)/AbsCosTheta));
             double EnergyBeforeBacking=Energy_MeV[g][i_Al]->Eval(RangeInBacking+(AlBacking_um/AbsCosTheta));
             double RangeInTarget=Range_um[g][i_Am0]->Eval(EnergyBeforeBacking);
@@ -116,12 +118,17 @@
             Am->Draw("samel");
             O->SetLineWidth(2);
             O->Draw("samel");
+            if(InelasticExcitationMeV>0){
+                Inelast->SetLineWidth(2);
+                Inelast->Draw("samel");
+            }
             KinCheck->cd(2);
             gPad->Update();
             gPad->SetLogz();
             Gate_E_thetaBlurBack[0]->DrawCopy("col")->GetXaxis()->SetRangeUser(5,35);
             Al->SetLineWidth(2);
             Al->Draw("samel");
+            
             
             // 	gStyle->SetLineScalePS(1.5); // default is 3, which looks crap
             gStyle->SetLineScalePS(2); // default is 3, which looks crap

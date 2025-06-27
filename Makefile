@@ -11,9 +11,12 @@ ROOT_LIBSEXTRA =  -lTreePlayer -lMathMore -lSpectrum -lMinuit
 # ROOT_LIBSEXTRA =  -lTreePlayer -lMathMore -lSpectrum -lMinuit -lPyROOT
 
 CC = g++
+ifeq ($(SPLINE),1)
 CFLAGS = -std=c++11 -g -fPIC $(ROOT_GCC_FLAGS) -I$(INCLUDE) 
+else
+CFLAGS = -std=c++11 -g -fPIC $(ROOT_GCC_FLAGS) -I$(INCLUDE) -DNOSPLINES
+endif
 LIBRS = -L$(INCLUDE) $(EXTERNAL_LIBS) $(ROOT_LIBS) $(ROOT_LIBSEXTRA) -L$(LIB) -L$(LIB)/bin
-
 
 SYSHEAD = $(wildcard include/*.h)
 OBJECTS = $(patsubst include/%.h,bin/%.o,$(SYSHEAD))

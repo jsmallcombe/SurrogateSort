@@ -120,21 +120,23 @@ int main(int argc, char *argv[]){
 	if(FileN)NextRun=Inputs.Entries[0];
 	
 	
-// 	#include "sort_files/CalHistList.h"
-	#ifdef SORTFILE1
-		#include INCLUDE_FILE(SORTFILE1)
-	#endif
-
 	vector<DetHit> HPGe,SiERaw,SidERaw,Solar,LaBr;
 	vector<TelescopeHit> SiHits;
 	vector<bool> IDGateTest(Inputs.CutGates.size(),false);
 	
-	if(Inputs.TestInput("MirrorZ"))TelescopeHit::MirrorZ();
+	bool MirrorZ=false;
+	if(Inputs.TestInput("MirrorZ")){TelescopeHit::MirrorZ();MirrorZ=true;}
 	if(Inputs.TestInput("TargetZOffset"))TelescopeHit::TargetZOffset(Inputs.GetInput("TargetZOffset"));
 	
     double TelescopeBuildWindow=120;
     if(Inputs.TestInput("TelescopeBuildWindow"))TelescopeBuildWindow=Inputs.GetInput("TelescopeBuildWindow");
 	
+	////// Include file for the histograms etc
+// 	#include "sort_files/CalHistList.h"
+	#ifdef SORTFILE1
+		#include INCLUDE_FILE(SORTFILE1)
+	#endif
+
 	cout<<endl;
 	
 	bool EndOfRun=false;
@@ -148,11 +150,12 @@ int main(int argc, char *argv[]){
 // // 		//Quick hard coded test
 // // 		if(!(((( tMod->at(0) )==2)||(( tMod->at(0) )==3)) && (tCh->at(0))<16 ))continue;
 		
+		EndOfRun=false;
 		if(PartSort){  
-				if(jentry>=nentries/10)jentry=nentries-1;//do the last loop steps
+			if(jentry>=nentries/10)jentry=nentries-1;//do the last loop steps
+			EndOfRun=true;
 		}
 		
-		EndOfRun=false;
 		if(jentry+1==NextRun){
 			if(FileI+1<FileN){
 				FileI++;

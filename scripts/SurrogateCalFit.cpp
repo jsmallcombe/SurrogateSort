@@ -44,12 +44,14 @@ int main(int argc, char *argv[]){
 	bool ViewGaus=false;
 	bool CalSet=false;
 	bool Zero=false;
-	bool DoGaus=true;
-	bool GausOnly=true;
-	bool Prune=true;
+	bool DoGaus=false;
+	bool GausOnly=false;
+	bool Prune=false;
 	bool Linear=false;
+	bool Normalise=false;
+	bool Comb=false;
+	bool DeltaOnly=false;
 	
-	if(GausOnly)DoGaus=true;
 	
 	string CalIn="";
 	string CalOut="";
@@ -57,8 +59,14 @@ int main(int argc, char *argv[]){
 	
 	for(int i=1;i<argc;i++){
 		TString Opt(argv[i]);
+		if(Opt=="gaus"||Opt=="g"||Opt=="Gaus"){
+			DoGaus=!DoGaus;
+		}
 		if(Opt=="elastic"||Opt=="e"||Opt=="Elastic"){
 			Elastic=true;
+		}
+		if(Opt=="norm"||Opt=="n"||Opt=="Normalise"){
+			Normalise=true;
 		}
 		if(Opt=="view"||Opt=="v"||Opt=="View"){
 			View=true;
@@ -69,8 +77,17 @@ int main(int argc, char *argv[]){
 		if(Opt=="zero"||Opt=="z"||Opt=="Zero"){
 			Zero=true;
 		}
+		if(Opt=="prune"||Opt=="p"||Opt=="Prune"){
+			Prune=true;
+		}
 		if(Opt=="lin"||Opt=="l"||Opt=="Lin"||Opt=="Linear"){
 			Linear=true;
+		}
+		if(Opt=="comb"||Opt=="c"||Opt=="Comb"){
+			Comb=true;
+		}
+		if(Opt=="delta"||Opt=="d"||Opt=="Delta"){
+			DeltaOnly=true;
 		}
 		if(Opt.EndsWith(".cal")||Opt.EndsWith(".Cal")){
 			if(!CalIn.size()){
@@ -86,7 +103,10 @@ int main(int argc, char *argv[]){
 		}
 	}
 	
-	if(!Elastic){DoGaus=false;ViewGaus=false;GausOnly=false;}
+	if(DoGaus)GausOnly=true;
+	if(GausOnly)DoGaus=true;
+	
+// 	if(!Elastic){DoGaus=false;ViewGaus=false;GausOnly=false;}
 	
 	TFile data(DataFile,"READ");
 	
@@ -98,9 +118,10 @@ int main(int argc, char *argv[]){
 
 	TF1* gaus=new TF1("gaus","gaus",0,6000);
 	
-	for(int i=0;i<16;i++){
-		for(int k=0;k<2;k++){// Loop dE E
-			for(int j=0;j<2;j++){ // loop A B
+	for(int k=0;k<2;k++){// Loop dE E
+		if(DeltaOnly&&k>0)continue;
+		for(int j=0;j<2;j++){ // loop A B
+			for(int i=0;i<16;i++){ 
 
 				TString HStr;
 				
@@ -109,16 +130,16 @@ int main(int argc, char *argv[]){
 					if(k==0&&j==1)HStr=Form("ForCal/ElasticData/Cal_dE_B_%d",i);
 					if(k==1&&j==0)HStr=Form("ForCal/ElasticData/Cal_E_A_%d",i);
 					if(k==1&&j==1)HStr=Form("ForCal/ElasticData/Cal_E_B_%d",i);
-				}else{
+				}else if(Comb){
 					if(k==0&&j==0)HStr=Form("ForCal/ElasticDataInverse/InvCal_dEComb_A_%d",i);
 					if(k==0&&j==1)HStr=Form("ForCal/ElasticDataInverse/InvCal_dEComb_B_%d",i);
 					if(k==1&&j==0)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_EComb_A_%d",i);
 					if(k==1&&j==1)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_EComb_B_%d",i);
-					
-// 					if(k==0&&j==0)HStr=Form("ForCal/ElasticDataInverse/InvCal_dE_A_%d",i);
-// 					if(k==0&&j==1)HStr=Form("ForCal/ElasticDataInverse/InvCal_dE_B_%d",i);
-// 					if(k==1&&j==0)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_E_A_%d",i);
-// 					if(k==1&&j==1)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_E_B_%d",i);
+				}else{
+					if(k==0&&j==0)HStr=Form("ForCal/ElasticDataInverse/InvCal_dE_A_%d",i);
+					if(k==0&&j==1)HStr=Form("ForCal/ElasticDataInverse/InvCal_dE_B_%d",i);
+					if(k==1&&j==0)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_E_A_%d",i);
+					if(k==1&&j==1)HStr=Form("ForCal/ElasticDataInverse_E/InvCal_E_B_%d",i);
 				}
 				
 				if(CalSet)DetHit::SetCalibrationDirect(Eset[j+k*2],i,0,0,0);
@@ -135,6 +156,7 @@ int main(int argc, char *argv[]){
 				TH1* yp=Hist->ProjectionY("pY");
 				TGraphErrors* g=new TGraphErrors();
 				TGraphErrors* f=new TGraphErrors();
+				TGraph* ng=new TGraph();
 				f->SetLineColor(kGreen);
 				f->SetLineWidth(3);
 				g->SetLineWidth(3);
@@ -146,6 +168,7 @@ int main(int argc, char *argv[]){
 						f->SetPoint(0,0,0);
 						f->SetPointError(0,5,0);
 					}
+					ng->SetPoint(0,0,0);
 				}
 				cout<<endl;
 				for(int b=1;b<=py->GetNbinsX();b++){
@@ -167,6 +190,7 @@ int main(int argc, char *argv[]){
 // 							f->SetPoint(f->GetN(),gaus->GetParameter(1),py->GetBinCenter(b));
 // 							f->SetPointError(f->GetN()-1,gaus->GetParError(1),0);
 							
+							ng->SetPoint(g->GetN(),gaus->GetParameter(1),py->GetBinCenter(b));
 							g->SetPoint(g->GetN(),gaus->GetParameter(1),py->GetBinCenter(b));
 							g->SetPointError(g->GetN()-1,gaus->GetParError(1),0);
 							
@@ -183,6 +207,7 @@ int main(int argc, char *argv[]){
 						double e=py->GetBinError(b);
 						if(e<1)e=50;
 						if(e<10)e=10;
+						ng->SetPoint(g->GetN(),n,py->GetBinCenter(b));
 						g->SetPoint(g->GetN(),n,py->GetBinCenter(b));
 						g->SetPointError(g->GetN()-1,e,0);
 					}
@@ -200,14 +225,17 @@ int main(int argc, char *argv[]){
 // 								pol2->ReleaseParameter(2);
 // 								pol2->SetParLimits(2,-0.001,0.001);
 // 							}
-				g->Fit(pol2,"QN");
+				if(Normalise){
+					ng->Fit(pol2,"QN");
+				}else{
+					g->Fit(pol2,"QN");
+				}
 				if(!Linear){
 // 					pol2->ReleaseParameter(0);
 					pol2->ReleaseParameter(2);
-				}else{
-					pol2->ReleaseParameter(0);
-					pol2->ReleaseParameter(1);
 				}
+				pol2->ReleaseParameter(0);
+				pol2->ReleaseParameter(1);
 						
 				if(Prune&&Elastic){
 					g->Fit(pol2,"QN");
@@ -228,14 +256,19 @@ int main(int argc, char *argv[]){
 							g->RemovePoint(i);
 							f->SetPoint(f->GetN(),x,y);
 							f->SetPointError(f->GetN()-1,xerr,0);
-							
+							ng->RemovePoint(i);
+					
 							cout<<endl<<"Pruning "<<x<<"+-"<<xerr<<" , "<<y;
 						}
 						double std=std::abs(x - x_expected)/xerr;
 					}
 				}
 				
-				g->Fit(pol2,"+R");
+				if(Normalise){
+					ng->Fit(pol2,"+R");
+				}else{
+					g->Fit(pol2,"+R");
+				}
 						
 				if(View){
 					TCanvas* C1=new TCanvas("","",1200,900);
@@ -247,6 +280,9 @@ int main(int argc, char *argv[]){
 					gPad->Update();
 					g->SetPoint(g->GetN(),0,0);
 					g->Draw("ap");
+					if(Normalise){
+						ng->Draw("same");
+					}
 					if(Prune){
 						f->Draw("samep");
 					}

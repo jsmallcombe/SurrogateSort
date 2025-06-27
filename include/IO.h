@@ -38,6 +38,8 @@ class SurrogateSortIO{
     vector<TCutG*> CutGates;
     vector<UShort_t> GateID;
 	
+    vector<vector<double>> ArrayInputs;
+	
 
 	stringstream infostream;
 	void Rewind();

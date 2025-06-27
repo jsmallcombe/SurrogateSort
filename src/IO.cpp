@@ -334,6 +334,16 @@ void SurrogateSortIO::ProcessOption(TString str){
                 GateID.push_back(GateTypeID);
             }
                    
+        }else if(str.EqualTo("-Array")){// Load a particle ID gate, next argument file containing name
+            int id;
+            int NN;
+            *this>>id>>NN;
+            while(ArrayInputs.size()<=id)ArrayInputs.push_back(vector<double>());
+            for(int nn=0;nn<NN;nn++){
+                double inputdata;
+                *this>>inputdata;
+                ArrayInputs[id].push_back(inputdata);
+            }
         }else{
             str.Remove(TString::kLeading,'-');
             double inputdata;

@@ -109,62 +109,54 @@
     
     
     out.cd();
+    
+    TH2D* dE_Check[2];
+    TH2D* E_Check[2];
+    TH2D* dE_E_Calibrated[2];
+    TH2D* dE_Etot_Calibrated[2];
+    TH2D* dEdX_Etot_SumCalibrated[2];
+    TH2D* dEdX_Etot_SumCalibrated3He[2];
+    TH2D* dEdX_Etot_SumCalibrated3HeAv[2];
+    TH2D* dEdX_Etot_SumCalibratedProton[2];
+    TH2D* dEEi_cal[2][16];
+    TH2D* dedxmid_dEi_cal[2][16];
+    TH2D* EdEi_cal[2][16];
+    TH2D* dedxmid_Ei_cal[2][16];
+    
+    if(PreCalibrated){
     out.mkdir("Calibrated");
     out.cd("Calibrated");
+
+        dE_Check[0]=new TH2D("dE_E_CalCheck_A","dE_E_CalCheck_A;dE (MeV);dE (MeV Calc.)",500,0,15,500,0,15);
+        dE_Check[1]=new TH2D("dE_E_CalCheck_B","dE_E_CalCheck_B;dE (MeV);dE (MeV Calc.)",500,0,15,500,0,15);
     
-        TH2D* dE_Check[2];
-        if(PreCalibrated){
-            dE_Check[0]=new TH2D("dE_E_CalCheck_A","dE_E_CalCheck_A;dE (MeV);dE (MeV Calc.)",500,0,15,500,0,15);
-            dE_Check[1]=new TH2D("dE_E_CalCheck_B","dE_E_CalCheck_B;dE (MeV);dE (MeV Calc.)",500,0,15,500,0,15);
-        };   
-        
-        TH2D* E_Check[2];
-        if(PreCalibrated){
-            E_Check[0]=new TH2D("E_dE_CalCheck_A","E_dE_CalCheck_A;E (MeV);E (MeV Calc.)",500,0,30,250,0,30);
-            E_Check[1]=new TH2D("E_dE_CalCheck_B","E_dE_CalCheck_B;E (MeV);E (MeV Calc.)",500,0,30,250,0,30);
-        };     
+        E_Check[0]=new TH2D("E_dE_CalCheck_A","E_dE_CalCheck_A;E (MeV);E (MeV Calc.)",500,0,30,250,0,30);
+        E_Check[1]=new TH2D("E_dE_CalCheck_B","E_dE_CalCheck_B;E (MeV);E (MeV Calc.)",500,0,30,250,0,30);
+
+        dE_E_Calibrated[0]=new TH2D("dE_E_Calibrated_A","dE_E_Calibrated_A;E (MeV);dE (MeV)",1000,0,40,500,0,15);
+        dE_E_Calibrated[1]=new TH2D("dE_E_Calibrated_B","dE_E_Calibrated_B;E (MeV);dE (MeV)",1000,0,40,500,0,15);
     
-    
-        TH2D* dE_E_Calibrated[2]={
-            new TH2D("dE_E_Calibrated_A","dE_E_Calibrated_A;E (MeV);dE (MeV)",1000,0,40,500,0,15),
-            new TH2D("dE_E_Calibrated_B","dE_E_Calibrated_B;E (MeV);dE (MeV)",1000,0,40,500,0,15)
-        };
+        dE_Etot_Calibrated[0]=new TH2D("dE_Etot_Calibrated_A","dE_Etot_Calibrated_A;E+dE (MeV);dE (MeV)",1000,0,40,500,0,15);
+        dE_Etot_Calibrated[1]=new TH2D("dE_Etot_Calibrated_B","dE_Etot_Calibrated_B;E+dE (MeV);dE (MeV)",1000,0,40,500,0,15);
         
-        TH2D* dE_Etot_Calibrated[2]={
-            new TH2D("dE_Etot_Calibrated_A","dE_Etot_Calibrated_A;E+dE (MeV);dE (MeV)",1000,0,40,500,0,15),
-            new TH2D("dE_Etot_Calibrated_B","dE_Etot_Calibrated_B;E+dE (MeV);dE (MeV)",1000,0,40,500,0,15)
-        };
+        dEdX_Etot_SumCalibrated[0]=new TH2D("dEdX_E_at_dE_SumCalibrated_A","dEdX_EAtdE_Calibrated_A;E+dE0.5+dead (MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
+        dEdX_Etot_SumCalibrated[1]=new TH2D("dEdX_E_at_dE_SumCalibrated_B","dEdX_EAtdE_Calibrated_B;E+dE0.5+dead (MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
         
-        TH2D* dEdX_Etot_SumCalibrated[2];
-        if(PreCalibrated){
-            dEdX_Etot_SumCalibrated[0]=new TH2D("dEdX_E_at_dE_SumCalibrated_A","dEdX_EAtdE_Calibrated_A;E+dE0.5+dead (MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
-            dEdX_Etot_SumCalibrated[1]=new TH2D("dEdX_E_at_dE_SumCalibrated_B","dEdX_EAtdE_Calibrated_B;E+dE0.5+dead (MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
-        };
+        dEdX_Etot_SumCalibrated3He[0]=new TH2D("dEdX_E_at_dE_SumCalibrated3He_A","3He_dEdX_EatdE_Calibrated_A;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
+        dEdX_Etot_SumCalibrated3He[1]=new TH2D("dEdX_E_at_dE_SumCalibrated3He_B","3He_dEdX_EatdE_Calibrated_B;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
         
-        TH2D* dEdX_Etot_SumCalibrated3He[2];
-        if(PreCalibrated){
-            dEdX_Etot_SumCalibrated3He[0]=new TH2D("dEdX_E_at_dE_SumCalibrated3He_A","3He_dEdX_EatdE_Calibrated_A;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
-            dEdX_Etot_SumCalibrated3He[1]=new TH2D("dEdX_E_at_dE_SumCalibrated3He_B","3He_dEdX_EatdE_Calibrated_B;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
-        };
+        dEdX_Etot_SumCalibrated3HeAv[0]=new TH2D("dEdX_E_at_dE_SumCalibrated3HeAv_A","3He_dEdX_EatdE_Calibrated_A;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
+        dEdX_Etot_SumCalibrated3HeAv[1]=new TH2D("dEdX_E_at_dE_SumCalibrated3HeAv_B","3He_dEdX_EatdE_Calibrated_B;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
         
-        TH2D* dEdX_Etot_SumCalibrated3HeAv[2];
-        if(PreCalibrated){
-            dEdX_Etot_SumCalibrated3HeAv[0]=new TH2D("dEdX_E_at_dE_SumCalibrated3HeAv_A","3He_dEdX_EatdE_Calibrated_A;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
-            dEdX_Etot_SumCalibrated3HeAv[1]=new TH2D("dEdX_E_at_dE_SumCalibrated3HeAv_B","3He_dEdX_EatdE_Calibrated_B;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
-        };
-        
-        TH2D* dEdX_Etot_SumCalibratedProton[2];
-        if(DoProtons&&PreCalibrated){
+        if(DoProtons){
             dEdX_Etot_SumCalibratedProton[0]=new TH2D("dEdX_E_at_dE_SumCalibratedProton_A","Proton_dEdX_EatdE_Calibrated_A;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
             dEdX_Etot_SumCalibratedProton[1]=new TH2D("dEdX_E_at_dE_SumCalibratedProton_B","Proton_dEdX_EatdE_Calibrated_B;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",1000,0,40,500,0,15);
         };
     
    out.mkdir("Calibrated/dE_Chan_cal");
    out.cd("Calibrated/dE_Chan_cal");
-    TH2D* dEEi_cal[2][16];
     for(UShort_t i=0;i<16;i++)dEEi_cal[0][i]=new TH2D(Form("dEE_calA_%d",i),Form("dE%d vs any E A;E (MeV);dE%d (MeV)",i,i),1000,0,40,500,0,15);
     for(UShort_t i=0;i<16;i++)dEEi_cal[1][i]=new TH2D(Form("dEE_calB_%d",i),Form("dE%d vs any E B;E (MeV);dE%d (MeV)",i,i),1000,0,40,500,0,15);
-    TH2D* dedxmid_dEi_cal[2][16];
     for(UShort_t i=0;i<16;i++)dedxmid_dEi_cal[0][i]=new TH2D(Form("dedxmid_dE_calA_%d",i),Form("dE%d vs any E A;Energy At dE Midpoint (Calc. MeV);dE%d/dX (MeV/arb.)",i,i),1000,0,40,500,0,15);
     for(UShort_t i=0;i<16;i++)dedxmid_dEi_cal[1][i]=new TH2D(Form("dedxmid_dE_calB_%d",i),Form("dE%d vs any E B;Energy At dE Midpoint (Calc. MeV);dE%d/dX (MeV/arb.)",i,i),1000,0,40,500,0,15);
    out.cd();
@@ -172,14 +164,12 @@
 
    out.mkdir("Calibrated/E_Chan_cal");
    out.cd("Calibrated/E_Chan_cal");
-    TH2D* EdEi_cal[2][16];
     for(UShort_t i=0;i<16;i++)EdEi_cal[0][i]=new TH2D(Form("EdE_calA_%d",i),Form("E%d vs any dE A;E%d (MeV);dE (MeV)",i,i),1000,0,40,500,0,15);
     for(UShort_t i=0;i<16;i++)EdEi_cal[1][i]=new TH2D(Form("EdE_calB_%d",i),Form("E%d vs any dE B;E%d (MeV);dE (MeV)",i,i),1000,0,40,500,0,15);
     
-    TH2D* dedxmid_Ei_cal[2][16];
     for(UShort_t i=0;i<16;i++)dedxmid_Ei_cal[0][i]=new TH2D(Form("dedxmid_E_calA_%d",i),Form("E%d vs any E A;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",i),1000,0,40,500,0,15);
     for(UShort_t i=0;i<16;i++)dedxmid_Ei_cal[1][i]=new TH2D(Form("dedxmid_E_calB_%d",i),Form("E%d vs any E B;Energy At dE Midpoint (Calc. MeV);dE/dX (MeV/arb.)",i),1000,0,40,500,0,15);
-    
+   }
    out.cd();
    
     
@@ -244,9 +234,56 @@
     // Per dE channel gate for "cleanly" selecting elastic on light mass target element
 //     double ElasticAlLow[16]={1250,1300,1400,1500,1600,1670,1770,1850,1920,2000,2050,2100,2150,0,0,0}; 
 //     double ElasticAlHigh[16]={1420,1500,1600,1700,1760,1830,1920,2010,2120,2200,2250,2300,2350,0,0,0}; 
-    double ElasticAlCent[16]={2620,2550,2575,2590,2605,2675,2705,2750,2790,2840,2910,3000,3040,3110,0,0}; 
+
+//     double ElasticAlCent[2][16]={{2620,2550,2575,2590,2605,2675,2705,2750,2790,2840,2910,3000,3040,3110,0,0},        {2620,2550,2575,2590,2605,2675,2705,2750,2790,2840,2910,3000,3040,3110,0,0}}; //Jan2025
+
+    double ElasticAlCent[2][16]={{0,4100,4070,4020,3985,3910,3850,3780,3700,3620,3510,3400,3310,000,000,000},{0,4270,4250,4110,4060,4000,3850,3760,3690,3590,3480,3380,3280,3170,000,000}}; //Feb2025
+    
+    
+    if(Inputs.TestInput("FebElasticRun")){
+        double FebElasticRun[2][16]={{000,5190,5170,5145,5105,5055,5010,4975,4915,4820,4770,4700,4620,4550,000,000},{5170,5190,5180,5140,5105,5050,5000,4960,4900,4800,4740,4680,4610,4510,4450,000}}; //Feb2025AlRun
+        for(int i=0;i<2;i++){for(int j=0;j<16;j++){ElasticAlCent[i][j]=FebElasticRun[i][j];}}
+    }
+    
+    for(int a=0;a<2;a++){
+        if(Inputs.ArrayInputs.size()>a){
+            for(int i=0;i<Inputs.ArrayInputs[a].size();i++){
+                if(i>15)break;
+                ElasticAlCent[a][i]=Inputs.ArrayInputs[a][i];
+            }
+        }
+    }
+    
    
-    double ElasticCut=4900;
+    double ElasticCut=4900;//Jan2025
+    if(Inputs.TestInput("ElasticCut")){
+        ElasticCut=Inputs.GetInput("ElasticCut");
+    }
+    
+    double InelasticExcitationMeV=0;
+    if(Inputs.TestInput("InelasticEx")){
+        InelasticExcitationMeV=Inputs.GetInput("InelasticEx");
+    }
+    
+    bool ElasticInTarget=false;
+    bool Oxygen=false;
+    bool Carbon=false;
+    double ElasticMassAmu=26.981539;
+    if(Inputs.TestInput("Carbon")){ 
+        ElasticMassAmu=12;
+        Carbon=true;
+    }
+    if(Inputs.TestInput("Oxygen")){
+        ElasticMassAmu=15.999;
+        ElasticInTarget=true;
+    }
+    if(Inputs.TestInput("ElasticMassAmu")){
+        ElasticMassAmu=Inputs.GetInput("ElasticMassAmu");
+    }
+    if(Inputs.TestInput("ElasticInTarget")){
+        ElasticInTarget=true;
+    }
+    
     
     #include "src/RangeData.h"
    
@@ -256,17 +293,28 @@
     double TargRange0=RangeAm_umMeV->Eval(MeV_PostBack);
     double MeV_MidTarg=EnergyAm_MeVum->Eval(TargRange0-AmHalf_um);
     
+    // If the geometry is in the mirrored configuration, the beam enters the target first and the backing second.
+    if(MirrorZ){
+        TargRange0=RangeAm_umMeV->Eval(beam_energy_MeV);
+        MeV_MidTarg=EnergyAm_MeVum->Eval(TargRange0-AmHalf_um);
+        double MeV_PosTarg=EnergyAm_MeVum->Eval(TargRange0-target_um);
+        BackRange0=RangeAl_umMeV->Eval(MeV_PosTarg);
+        MeV_MidBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um);
+        MeV_PostBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um*2);
+    }
+    
     cout<<endl<<"ENERGY AT CENTER OF BACKING "<< MeV_MidBack<<" MeV";
     cout<<endl<<"ENERGY AT CENTER OF TARGET "<< MeV_MidTarg<<" MeV";
     
-    TGraph* KinematicElastic=new TGraph();
-    TGraph* KinematicElasticAl=new TGraph();
+    TGraph* KinematicElasticSet=new TGraph();
+    TGraph* KinematicElasticSetAl=new TGraph();
     
     for(int i=1;i<360;i++){
         
 //         4.002603
 //          243.0613727
 //          3.016029
+        // As the target is reversed when MirrorZ, this section does not need to change.
         
         double theta=i*TMath::Pi()/360;
         
@@ -279,6 +327,9 @@
         double EnergyPostAmElastic=EnergyAm_MeVum->Eval(RangeTargElastic-EffectiveTargetThickness_um); 
         if(RangeTargElastic<EffectiveTargetThickness_um)EnergyPostAmElastic=0;
 
+        // The energy is calcualted assuming the particle is also penetrating the backing.
+        // This should depend on theta, but, as we ONLY detect particles in this direction, there is no need to complicate.
+        
         double RangePostAmElastic=RangeAl_umMeV->Eval(EnergyPostAmElastic);
         if(EnergyPostAmElastic<=0)RangePostAmElastic=0;///////////////
                 
@@ -287,29 +338,32 @@
         double KE_PostTarget=EnergyAl_MeVum->Eval(RangePostAmElastic-EffectiveBackingThickness_um); 
         if(RangePostAmElastic<EffectiveBackingThickness_um)KE_PostTarget=0;//////////////////////
         
-        KinematicElastic->SetPoint(KinematicElastic->GetN(),theta,KE_PostTarget); 
+        KinematicElasticSet->SetPoint(KinematicElasticSet->GetN(),theta,KE_PostTarget); 
         
+      
+        ///// The next part considered [in]elastic scattering on something other than the target element, i.e. backing and oxidisation 
         
-        if(Inputs.TestInput("Oxygen")){  
-            //// Elastic on Oxygen In Target
-            Elab=kinetic_lab_calcs_elastic_E(MeV_MidTarg,3.016029,15.999,theta)[8]; 
+        if(InelasticExcitationMeV>0){
+            Elab=kinetic_lab_calcs_E(MeV_MidTarg,3.016029,ElasticMassAmu,theta,3.016029,ElasticMassAmu+(InelasticExcitationMeV/jam_phys_amu))[8];
+        }else{
+            Elab=kinetic_lab_calcs_elastic_E(MeV_MidTarg,3.016029,ElasticMassAmu,theta)[8]; 
+        }
+    
+        if(ElasticInTarget){  
+            //// Elastic is in the Target i.e. Oxygen In Target Oxide
+
             RangeTargElastic=RangeAm_umMeV->Eval(Elab);
             EffectiveTargetThickness_um=AmHalf_um/std::abs(cos(theta));
             EnergyPostAmElastic=EnergyAm_MeVum->Eval(RangeTargElastic-EffectiveTargetThickness_um); 
             if(RangeTargElastic<EffectiveTargetThickness_um)EnergyPostAmElastic=0;
             RangePostAmElastic=RangeAl_umMeV->Eval(EnergyPostAmElastic);
             if(EnergyPostAmElastic<=0)RangePostAmElastic=0;///////////////
-            EffectiveBackingThickness_um=2*AlBacking_half_um/std::abs(cos(theta));
+            EffectiveBackingThickness_um=2*AlBacking_half_um/std::abs(cos(theta));//Duplicating above setting
             KE_PostTarget=EnergyAl_MeVum->Eval(RangePostAmElastic-EffectiveBackingThickness_um); 
             if(RangePostAmElastic<EffectiveBackingThickness_um)KE_PostTarget=0;//////////////////////
-            KinematicElasticAl->SetPoint(KinematicElasticAl->GetN(),theta,KE_PostTarget);     
+            KinematicElasticSetAl->SetPoint(KinematicElasticSetAl->GetN(),theta,KE_PostTarget);     
         }else{
-        //// Elastic on Aluminium backing 
-            Elab=kinetic_lab_calcs_elastic_E(MeV_MidBack,3.016029,26.981539,theta)[8]; 
- 
-            if(Inputs.TestInput("Carbon")){ 
-                Elab=kinetic_lab_calcs_elastic_E(MeV_MidBack,3.016029,12,theta)[8]; 
-            }
+            //// Elastic on Aluminium backing (or another contaminant) 
 
             double RangeMidAlElastic=RangeAl_umMeV->Eval(Elab);
             EffectiveBackingThickness_um*=0.5;
@@ -317,24 +371,29 @@
             KE_PostTarget=EnergyAl_MeVum->Eval(RangeMidAlElastic-EffectiveBackingThickness_um); 
             if(RangeMidAlElastic<EffectiveBackingThickness_um)KE_PostTarget=0;//////////////////////
 
-            KinematicElasticAl->SetPoint(KinematicElasticAl->GetN(),theta,KE_PostTarget); 
+            KinematicElasticSetAl->SetPoint(KinematicElasticSetAl->GetN(),theta,KE_PostTarget); 
 
         }
     }
     
    out.cd();
-   KinematicElastic->Write("KinElastic");
-    if(Inputs.TestInput("Oxygen")){ 
-        KinematicElasticAl->Write("KinElasticO");
-    }else{
-        if(Inputs.TestInput("Carbon")){ 
-            KinematicElasticAl->Write("KinElasticC");
-        }else{
-            KinematicElasticAl->Write("KinElasticAl");
-        }
-    }
+   KinematicElasticSet->Write("KinElastic");
+   stringstream kk;
+   kk<<"KinElastic"<<(int)std::round(ElasticMassAmu);
+   if(Oxygen)kk<<"O";
+   if(Carbon)kk<<"C";
+   if(std::round(ElasticMassAmu)==27)kk<<"O";
+   KinematicElasticSetAl->Write(kk.str().c_str());
+   
    gROOT->cd();
    
+    #ifdef NOSPLINES
+        TGraph *KinematicElastic = KinematicElasticSet;
+        TGraph *KinematicElasticAl = KinematicElasticSetAl;  
+    #else
+        TSpline3 *KinematicElastic = new TSpline3("KinematicElastic",KinematicElasticSet);  
+        TSpline3 *KinematicElasticAl = new TSpline3("KinematicElasticAl",KinematicElasticSetAl);  
+    #endif  
     
 //     TGraph* KinematicAlphaDecay = new TGraph();
 //     
@@ -434,3 +493,4 @@
 //         AlphaCalGraph[0]->Write("AlphaDecayFitA");
 //         AlphaCalGraph[1]->Write("AlphaDecayFitB");
 //    gROOT->cd();
+   

@@ -33,6 +33,7 @@
         double Cal_E=Si.E().Energy();
         double Cal_dE=Si.dE().Energy();
         double Cal_dEdX=Cal_dE*EffThick;
+        double Cal_Etot=Cal_E+Cal_dE;
         
         // dE/dX from the actual dE detector energy
         double dEdXDirect=Cal_dE*EffThick;
@@ -50,11 +51,13 @@
         
         if(IsBeam){dEEffEtot[Si.AB()]->Fill(Etot,dEdX);}
         
-        dE_E_Calibrated[Si.AB()]->Fill(Cal_E,Cal_dE);
-        dE_Etot_Calibrated[Si.AB()]->Fill(Cal_E+Cal_dE,Cal_dE);
-        
-        dEEi_cal[Si.AB()][Si.dE().Index()]->Fill(Cal_E,Cal_dE);
-        EdEi_cal[Si.AB()][Si.E().Index()]->Fill(Cal_E,Cal_dE);
+        if(PreCalibrated){
+            dE_E_Calibrated[Si.AB()]->Fill(Cal_E,Cal_dE);
+            dE_Etot_Calibrated[Si.AB()]->Fill(Cal_E+Cal_dE,Cal_dE);
+            
+            dEEi_cal[Si.AB()][Si.dE().Index()]->Fill(Cal_E,Cal_dE);
+            EdEi_cal[Si.AB()][Si.E().Index()]->Fill(Cal_E,Cal_dE);
+        }
 
     //////////////////// End of basic histograms
         
@@ -153,15 +156,29 @@
             // First determine the calculated post-target energy, is it elastic on Uranium or Aluminium or Oxygen
             
             //if(Raw_dE_E_Charge_ElasticBeamGate[Si.AB()]->IsInside(Etot,dEdX)){
-            if(Etot>ElasticCut){
-                // Gate elastic on americium
-                KE_PostTarget=KinematicElastic->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
+            if(PreCalibrated){
+                if(EnergyMidDeltaActive_Average>ElasticCut){
+                    // Gate elastic on americium
+                    KE_PostTarget=KinematicElastic->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
+                }
+            }else{
+                if(Etot>ElasticCut){
+                    // Gate elastic on americium
+                    KE_PostTarget=KinematicElastic->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
+                }
             }
             
             // Gate on all beam and then energy range gate strip by strip to focus on oxygen elastics
     //         if(IsBeam&&ElasticAlHigh[Si.dE().Index()]>E&&ElasticAlLow[Si.dE().Index()]<E){  
-            if(abs(ElasticAlCent[Si.dE().Index()]-Etot)<50){  
-                KE_PostTarget=KinematicElasticAl->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
+            if(PreCalibrated){
+//                 if(abs(ElasticAlCent[Si.AB()][Si.dE().Index()]-Cal_Etot)<0.35){  
+                if(abs(ElasticAlCent[Si.AB()][Si.dE().Index()]-EnergyMidDeltaActive_Average)<0.35){  
+                    KE_PostTarget=KinematicElasticAl->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
+                }
+            }else{
+                if(abs(ElasticAlCent[Si.AB()][Si.dE().Index()]-Etot)<50){  
+                    KE_PostTarget=KinematicElasticAl->Eval(ThetaRad);//Get energy of He3 from pre-solved kinematics
+                }
             }
                                          
             // IF we have determined an absolute incident particle energy from elastics
@@ -179,7 +196,7 @@
 //////////////////// Fill Histograms which depend on the convoluted corrections /////
     
             if(PreCalibrated){
-                if(CalcEnergyEdet){
+                if(CalcEnergyEdet&&Etot<ElasticCut){
                     E_Check[Si.AB()]->Fill(Cal_E,CalcEnergyEdet); 
                     E_Check[Si.AB()]->Fill(CalcEnergyEdet,CalcEnergyEdet); 
                     
@@ -192,12 +209,10 @@
                     }
                     
                     InvCal_ECompare[Si.AB()][Si.dE().Index()]->Fill(Cal_E,CalcEnergyEdet);
-                    
-                    if(EventCal)dEdX_Etot_SumCalibrated3He[Si.AB()]->Fill(EnergyMidDeltaActive_Average,dEdX_Average);
-                    
-                    dEdX_Etot_SumCalibrated3HeAv[Si.AB()]->Fill((dEmidcalc+CalcEnergyMidDeltaActive+EnergyMidDeltaActive)/3.0,dEdX_Average);
-                    
                 }
+                
+                dEdX_Etot_SumCalibrated3HeAv[Si.AB()]->Fill((dEmidcalc+CalcEnergyMidDeltaActive+EnergyMidDeltaActive)/3.0,dEdX_Average);
+                
                 
                 dE_Check[Si.AB()]->Fill(Cal_dE,dECalc); 
                 dE_Check[Si.AB()]->Fill(dECalc,dECalc); 

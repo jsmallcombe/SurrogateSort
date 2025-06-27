@@ -21,6 +21,9 @@
         TH2D* dEdX_Etot_Corrected= new TH2D("dEdX_Etot_Corrected","dEdX_Etot_Sum;E_{tot.} (MeV);dE/dX (arb.)",1000,0,50,500,0,15);
     gROOT->cd();
     
+    double thetaoffset=0;
+    if(MirrorZ)thetaoffset=90;
+    
     vector<TH2D*> Gate_dE_dX;
     vector<TH2D*> Gate_E_theta;
     vector<TH2D*> Gate_E_costheta;
@@ -32,11 +35,11 @@
         out.mkdir(T);
         out.cd(T);
         Gate_dE_dX.push_back(new TH2D("Charge_dEdX_Etot_sum_"+T,"dEdX_Etot_sum_"+T+";Charge E+dE;Charge dE/dX",1000,0,8000,500,0,4000));
-        Gate_E_theta.push_back(new TH2D("Etarg_theta_"+T,"Etarg_#theta_"+T+";E_{targ.} (MeV);#theta (deg.)",1000,0,50,180,90,180));
-        Gate_E_costheta.push_back(new TH2D("Etarg_costheta_"+T,"Etarg_cos(#theta)_"+T+";E_{targ.} (MeV);cos(#theta)",1000,0,50,200,-1,0));
-        Gate_E_thetaBlur.push_back(new TH2D("Etarg_thetaBlur_"+T,"Etarg_#theta_"+T+";E_{targ.} (MeV);#theta (deg.)",1000,0,50,180,90,180));
-        Gate_E_thetaBlurBack.push_back(new TH2D("EBack_thetaBlur_"+T,"EBack_#theta_"+T+";E_{Back.} (MeV);#theta (deg.)",1000,0,50,180,90,180));
-        Gate_E_costhetaBlur.push_back(new TH2D("Etarg_costhetaBlur_"+T,"Etarg_cos(#theta)_"+T+";E_{targ.} (MeV);cos(#theta)",1000,0,50,200,-1,0));
+        Gate_E_theta.push_back(new TH2D("Etarg_theta_"+T,"Etarg_#theta_"+T+";E_{targ.} (MeV);#theta (deg.)",1000,0,50,180,90-thetaoffset,180-thetaoffset));
+        Gate_E_costheta.push_back(new TH2D("Etarg_costheta_"+T,"Etarg_cos(#theta)_"+T+";E_{targ.} (MeV);cos(#theta)",1000,0,50,200,-1+(thetaoffset/90),0+(thetaoffset/90)));
+        Gate_E_thetaBlur.push_back(new TH2D("Etarg_thetaBlur_"+T,"Etarg_#theta_"+T+";E_{targ.} (MeV);#theta (deg.)",1000,0,50,180,90-thetaoffset,180-thetaoffset));
+        Gate_E_thetaBlurBack.push_back(new TH2D("EBack_thetaBlur_"+T,"EBack_#theta_"+T+";E_{Back.} (MeV);#theta (deg.)",1000,0,50,180,90-thetaoffset,180-thetaoffset));
+        Gate_E_costhetaBlur.push_back(new TH2D("Etarg_costhetaBlur_"+T,"Etarg_cos(#theta)_"+T+";E_{targ.} (MeV);cos(#theta)",1000,0,50,200,-1+(thetaoffset/90),0+(thetaoffset/90)));
         Gate_E_strad.push_back(new TH1D("Etarg_strad_"+T,"Etarg_strad_"+T+";E_{targ.} (MeV);Counts/strad",1000,0,50));
         
         gROOT->cd();
@@ -44,12 +47,32 @@
     
     gROOT->cd();
     
-    
     double BackRange0=RangeAl_umMeV->Eval(beam_energy_MeV);
     double MeV_MidBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um);
     double MeV_PostBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um*2);
     double TargRange0=RangeAm_umMeV->Eval(MeV_PostBack);
     double MeV_MidTarg=EnergyAm_MeVum->Eval(TargRange0-AmHalf_um);
+    
+    // If the geometry is in the mirrored configuration, the beam enters the target first and the backing second.
+    if(MirrorZ){
+        TargRange0=RangeAm_umMeV->Eval(beam_energy_MeV);
+        MeV_MidTarg=EnergyAm_MeVum->Eval(TargRange0-AmHalf_um);
+        double MeV_PosTarg=EnergyAm_MeVum->Eval(TargRange0-target_um);
+        BackRange0=RangeAl_umMeV->Eval(MeV_PosTarg);
+        MeV_MidBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um);
+        MeV_PostBack=EnergyAl_MeVum->Eval(BackRange0-AlBacking_half_um*2);
+    }
+    
+    
+    double InelasticExcitationMeV=0;
+    if(Inputs.TestInput("InelasticEx")){
+        InelasticExcitationMeV=Inputs.GetInput("InelasticEx");
+    }
+    double ElasticMassAmu=15.999;
+    if(Inputs.TestInput("ElasticMassAmu")){
+        ElasticMassAmu=Inputs.GetInput("ElasticMassAmu");
+    }
+    
     
     cout<<endl<<"ENERGY AT CENTER OF BACKING "<< MeV_MidBack<<" MeV";
     cout<<endl<<"ENERGY AT CENTER OF TARGET "<< MeV_MidTarg<<" MeV";
@@ -58,6 +81,7 @@
     TGraph* Al=new TGraph();
     TGraph* O=new TGraph();
     TGraph* C=new TGraph();
+    TGraph* Inelast=new TGraph();
     
     for(int i=1;i<360;i++){
         double theta=i*TMath::Pi()/360.;
@@ -65,10 +89,13 @@
         Am->SetPoint(i-1,Elab,i/2.);
         Elab=kinetic_lab_calcs_elastic_E(MeV_MidTarg,3.016029,15.999,theta)[8];
         O->SetPoint(i-1,Elab,i/2.); 
-         Elab=kinetic_lab_calcs_elastic_E(MeV_MidBack,3.016029,26.981539,theta)[8]; 
+        Elab=kinetic_lab_calcs_elastic_E(MeV_MidBack,3.016029,26.981539,theta)[8]; 
         Al->SetPoint(i-1,Elab,i/2.);
         Elab=kinetic_lab_calcs_elastic_E(MeV_MidTarg,3.016029,12,theta)[8]; 
         C->SetPoint(i-1,Elab,i/2.);
+        Elab=kinetic_lab_calcs_E(MeV_MidTarg,3.016029,ElasticMassAmu,theta,3.016029,ElasticMassAmu+(InelasticExcitationMeV/jam_phys_amu))[8]; 
+        Inelast->SetPoint(i-1,Elab,i/2.);
+        
     }
     
     out.mkdir("KinCalc");
@@ -77,5 +104,10 @@
         Al->Write("Kinematics27Al3He");
         O->Write("Kinematics16O3He");
         C->Write("Kinematics12C3He");
+        if(InelasticExcitationMeV>0){
+            stringstream kk;
+            kk<<"Kinematics"<<(int)std::round(ElasticMassAmu)<<"*";
+            Inelast->Write(kk.str().c_str());
+        }
     
     gROOT->cd();

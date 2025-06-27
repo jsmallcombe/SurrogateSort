@@ -1,10 +1,14 @@
 // //  The splines are slightly faster and more accurate, but causes edge case misbehaviour
-#define NOSPLINES
+// #define NOSPLINES
 
     double target_thickness_ug_cm2=158.2;//Jan2025
     double target_density_g_cm3=11.68; //AmO2
     double target_um=1E-2*target_thickness_ug_cm2/target_density_g_cm3;
     double AmHalf_um=target_um/2;
+    
+    if(Inputs.TestInput("AmHalf_um")){
+        AmHalf_um=Inputs.GetInput("AmHalf_um");
+    }
     
     double beam_energy_MeV=30; 
     if(Inputs.TestInput("BeamEnergy")){
@@ -59,9 +63,11 @@
   TGraph *H1_SRIM_RangeSilicon_umMeV = new TGraph(51,H1SiEneMeV,H1SiRanmum);
 
 #ifdef NOSPLINES
+    std::cout<< std::endl << "USING TGRAPH" << std::endl;
    TGraph *ProtonsSilicon_Range_umMeV = new TGraph(51,H1SiEneMeV,H1SiRanmum);
    TGraph *ProtonsSilicon_Energy_MeVum = new TGraph(51,H1SiRanmum,H1SiEneMeV);  
 #else
+    std::cout<< std::endl << "USING SPLINES" << std::endl;
    Range_umMeV = new TGraph(51,H1SiEneMeV,H1SiRanmum);
    Energy_MeVum = new TGraph(51,H1SiRanmum,H1SiEneMeV);  
    TSpline3 *ProtonsSilicon_Range_umMeV = new TSpline3("ProtonsSilicon_Range_umMeV",Range_umMeV);  
